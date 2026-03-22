@@ -29,11 +29,14 @@ from datetime import datetime
 from pathlib import Path
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
-DB_PATH     = Path(__file__).parent / "bustrack.db"
+# On Render, use /data folder so database persists between deploys
+# Locally, use the same folder as server.py
+_data_dir = Path('/data') if Path('/data').exists() else Path(__file__).parent
+DB_PATH = _data_dir / "bustrack.db"
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 SECRET_KEY  = os.environ.get("BUSTRACK_SECRET","bustrack_jinja_v4_2026")
 TOKEN_HOURS = 24
-PORT, HOST  = 8080, "0.0.0.0"
+PORT = int(os.environ.get('PORT', 8080)); HOST = '0.0.0.0'
 
 # ─── NOTIFICATION CREDENTIALS ─────────────────────────────────────────────────
 AT_USERNAME  = os.environ.get("AT_USERNAME",  "sandbox")

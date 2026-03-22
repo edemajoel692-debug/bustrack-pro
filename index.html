@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0A2463">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BusTrack Pro">
+<link rel="manifest" href="/manifest.json">
+<title>BusTrack Pro v4 — Jinja Senior Secondary School</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#060E20;--surf:#0C1730;--surf2:#112044;--surf3:#162A58;
+  --primary:#1040C8;--accent:#FF6B35;--accent2:#00D9B0;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);
+  --text:#E4EAF8;--muted:#7089B8;--faint:#2A3E6A;
+  --danger:#FF3356;--warn:#FFB800;--success:#00D9B0;--info:#4A9EFF;
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:14px;--shadow:0 8px 40px rgba(0,0,0,.6);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text)}
+input,select,textarea,button{font-family:inherit;font-size:inherit}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:2px}
+
+/* AUTH SCREENS */
+.auth-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);z-index:100}
+.auth-box{background:var(--surf);border:1px solid var(--border2);border-radius:20px;padding:32px;width:100%;max-width:440px;box-shadow:var(--shadow)}
+.auth-logo{font-size:40px;margin-bottom:10px}
+.auth-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.auth-msg{font-size:13px;color:var(--muted);margin-top:10px;text-align:center;min-height:20px}
+
+/* APP LAYOUT */
+#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+#sidebar{width:252px;background:var(--surf);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:transform .25s ease}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#topbar{height:54px;background:var(--surf);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 18px;flex-shrink:0}
+#page{flex:1;overflow-y:auto;padding:22px}
+
+/* SIDEBAR */
+.sb-brand{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#B03800);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-title{font-weight:800;font-size:14px;line-height:1.2}
+.sb-title small{display:block;font-size:10px;color:var(--muted);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+.sb-user{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.sb-ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--primary));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.sb-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-sec{padding:6px 14px 2px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--faint);font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;font-size:13px;color:var(--muted);border-radius:8px;margin:1px 6px;transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--surf2);color:var(--text)}
+.nav-item.active{background:var(--primary);color:#fff}
+.nav-item .ni{width:18px;text-align:center;font-size:14px;flex-shrink:0}
+.sb-bot{padding:10px;border-top:1px solid var(--border)}
+.btn-logout{width:100%;padding:9px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:12.5px;transition:all .15s}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .12s;white-space:nowrap;text-decoration:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover:not(:disabled){background:#0830A8}
+.btn-secondary{background:var(--surf2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover:not(:disabled){background:var(--surf3)}
+.btn-success{background:#0A5C38;color:#fff}.btn-success:hover{background:#084A2C}
+.btn-danger{background:rgba(255,51,86,.12);color:var(--danger);border:1px solid rgba(255,51,86,.2)}.btn-danger:hover{background:rgba(255,51,86,.22)}
+.btn-warn{background:rgba(255,184,0,.12);color:var(--warn);border:1px solid rgba(255,184,0,.2)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:7px}
+.btn-sos{background:linear-gradient(135deg,#DD0020,#AA0018);color:#fff;padding:16px;font-size:16px;font-weight:800;border:none;border-radius:14px;cursor:pointer;width:100%;margin-top:10px;box-shadow:0 4px 20px rgba(220,0,32,.4);animation:sosp 2s ease-in-out infinite;letter-spacing:.5px}
+@keyframes sosp{0%,100%{box-shadow:0 4px 20px rgba(220,0,32,.4)}50%{box-shadow:0 4px 40px rgba(220,0,32,.8)}}
+
+/* CARDS */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.card-hd{padding:13px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hd-title{font-weight:700;font-size:14px}
+.card-hd-sub{font-size:12px;color:var(--muted)}
+.card-body{padding:14px 17px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:11px;margin-bottom:20px}
+.stat{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:15px;position:relative;overflow:hidden}
+.stat-val{font-size:26px;font-weight:800;font-family:var(--mono);line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:5px}
+.stat-icon{position:absolute;right:12px;top:12px;font-size:20px;opacity:.25}
+.stat.c-green{border-color:rgba(0,217,176,.25);background:rgba(0,217,176,.05)}.stat.c-green .stat-val{color:var(--success)}
+.stat.c-blue{border-color:rgba(74,158,255,.25);background:rgba(74,158,255,.05)}.stat.c-blue .stat-val{color:var(--info)}
+.stat.c-warn{border-color:rgba(255,184,0,.25);background:rgba(255,184,0,.05)}.stat.c-warn .stat-val{color:var(--warn)}
+.stat.c-red{border-color:rgba(255,51,86,.25);background:rgba(255,51,86,.05)}.stat.c-red .stat-val{color:var(--danger)}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl tr:last-child td{border-bottom:none}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-green{background:rgba(0,217,176,.12);color:var(--success)}
+.b-red{background:rgba(255,51,86,.12);color:var(--danger)}
+.b-blue{background:rgba(74,158,255,.12);color:var(--info)}
+.b-orange{background:rgba(255,107,53,.12);color:var(--accent)}
+.b-grey{background:var(--surf2);color:var(--muted)}
+.b-warn{background:rgba(255,184,0,.12);color:var(--warn)}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.fg label{font-size:12px;font-weight:600;color:var(--muted)}
+.inp{background:var(--surf2);border:1px solid var(--border2);color:var(--text);padding:9px 13px;border-radius:9px;font-size:13.5px;width:100%;transition:border-color .15s}
+.inp:focus{outline:none;border-color:var(--primary)}
+.inp::placeholder{color:var(--faint)}
+select.inp option{background:var(--surf2)}
+textarea.inp{resize:vertical;min-height:78px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* MODAL */
+#modalBack{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+#modalBack.open{display:flex}
+#modalBox{background:var(--surf);border-radius:var(--r);width:100%;max-width:580px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow);border:1px solid var(--border2)}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-weight:700;font-size:15px}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 8px;border-radius:6px;line-height:1}
+.modal-close:hover{background:var(--surf2)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* MAP */
+#leafletMap{width:100%;height:100%;min-height:400px}
+.map-wrap{border-radius:var(--r);overflow:hidden;border:1px solid var(--border);height:calc(100vh - 160px)}
+
+/* STOP CARDS */
+.stop-card{background:var(--surf2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.stop-hd{background:var(--surf3);padding:10px 13px;display:flex;align-items:center;gap:8px}
+.stop-num{width:24px;height:24px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:11px;flex-shrink:0}
+.stop-body{padding:9px 13px}
+.stop-stu{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)}
+.stop-stu:last-child{border-bottom:none}
+.stu-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.stop-ft{padding:8px 13px;border-top:1px solid var(--border);display:flex;gap:6px}
+
+/* NOTIFICATIONS */
+.notif-item{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px 15px;margin-bottom:7px;cursor:pointer;display:flex;gap:12px;transition:background .12s}
+.notif-item:hover{background:var(--surf2)}
+.notif-item.unread{border-left:3px solid var(--primary)}
+.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);display:inline-block;margin-left:5px;vertical-align:middle}
+
+/* MANIFEST */
+.manifest-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.mcheck{width:28px;height:28px;border:2px solid var(--border2);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;font-size:14px}
+.mcheck.on{background:var(--success);border-color:var(--success);color:#fff}
+
+/* DRIVER HERO */
+.trip-hero{background:linear-gradient(135deg,var(--surf2),var(--surf3));border:1px solid var(--border);border-radius:16px;padding:22px;text-align:center;margin-bottom:14px}
+.btn-trip{width:100%;border:none;border-radius:13px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;margin-bottom:8px;letter-spacing:.5px}
+.btn-start{background:linear-gradient(135deg,#009950,#007740);color:#fff}
+.btn-start:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,153,80,.4)}
+.btn-end{background:linear-gradient(135deg,#CC0020,#990018);color:#fff}
+.btn-end:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(204,0,32,.4)}
+
+/* PARENT HERO */
+.parent-hero{background:linear-gradient(135deg,var(--primary),#071880);border-radius:16px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.parent-hero::after{content:'🚌';position:absolute;right:12px;bottom:-6px;font-size:60px;opacity:.12}
+.ph-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.ph-stat{background:rgba(255,255,255,.1);border-radius:9px;padding:9px;text-align:center}
+.ph-stat-val{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-stat-lbl{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+
+/* ETA */
+.eta-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.eta-num{width:26px;height:26px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.eta-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent2);margin-left:auto;white-space:nowrap}
+.eta-val.arriving{color:var(--success);animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ALERTS */
+.alert-bar{padding:10px 15px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ab-sos{background:rgba(255,51,86,.1);border:1px solid rgba(255,51,86,.25);color:var(--danger)}
+.ab-warn{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);color:var(--warn)}
+.ab-info{background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.25);color:var(--info)}
+
+/* OFFLINE BANNER */
+#offlineBanner{background:rgba(255,184,0,.1);border-bottom:1px solid rgba(255,184,0,.25);color:var(--warn);text-align:center;padding:6px 14px;font-size:12.5px;font-weight:600;display:none}
+
+/* TOAST */
+#toasts{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;max-width:320px}
+.toast{background:var(--surf3);border:1px solid var(--border);border-radius:10px;padding:11px 15px;font-size:13px;display:flex;gap:9px;align-items:flex-start;animation:tin .25s ease;box-shadow:var(--shadow)}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--danger)}
+.toast.warning{border-left:3px solid var(--warn)}
+.toast.info{border-left:3px solid var(--info)}
+@keyframes tin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+/* MISC */
+.page-header{margin-bottom:18px}
+.page-header h1{font-size:20px;font-weight:800;margin-bottom:3px}
+.page-header p{font-size:13px;color:var(--muted)}
+.row-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.row-item:last-child{border-bottom:none}
+.row-label{color:var(--muted);font-size:12.5px}
+.prog-bar{height:6px;background:var(--surf3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+.empty{text-align:center;padding:40px 20px}
+.empty-icon{font-size:44px;display:block;margin-bottom:12px;opacity:.45}
+.empty h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.empty p{font-size:13px;color:var(--muted)}
+.topbar-ico{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text);padding:5px;display:none}
+.ob-badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.ob-on{background:rgba(0,217,176,.12);color:var(--success)}
+.ob-off{background:rgba(255,51,86,.12);color:var(--danger)}
+.gps-badge{font-size:11px;padding:3px 8px;border-radius:20px;background:rgba(74,158,255,.12);color:var(--info);font-weight:600;display:none}
+.divider{height:1px;background:var(--border);margin:12px 0}
+
+@media(max-width:768px){
+  #sidebar{position:fixed;inset:0 auto 0 0;z-index:300;transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  #sbOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:299;display:none}
+  #sbOverlay.open{display:block}
+  .topbar-ico{display:block!important}
+  .form-row{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  #page{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- OFFLINE BANNER -->
+<div id="offlineBanner">📶 Offline — GPS stored locally (<span id="offCount">0</span> points pending sync)</div>
+
+<!-- SCREENS (auth) -->
+<div id="screenWrap" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px">
+
+  <!-- Checking -->
+  <div id="sChecking" class="auth-box" style="text-align:center;max-width:380px">
+    <div class="auth-logo">🚌</div>
+    <div class="auth-title">BusTrack Pro v4</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:6px" id="checkMsg">Connecting to server…</div>
+    <div style="margin-top:18px;display:flex;justify-content:center">
+      <div style="width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite"></div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
+
+  <!-- Setup Wizard -->
+  <div id="sSetup" class="auth-box" style="display:none;max-width:500px">
+    <div class="auth-logo">🏫</div>
+    <div class="auth-title">First Time Setup</div>
+    <div class="auth-sub">BusTrack Pro v4 — Uganda 2026</div>
+    <div class="form-row">
+      <div class="fg"><label>School Name *</label><input class="inp" id="sw_school" value="Jinja Senior Secondary School"></div>
+      <div class="fg"><label>School Address</label><input class="inp" id="sw_addr" placeholder="Jinja City, Eastern Uganda"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Admin Full Name *</label><input class="inp" id="sw_name" placeholder="Your full name"></div>
+      <div class="fg"><label>Admin Email *</label><input class="inp" id="sw_email" type="email" placeholder="admin@jinja.ug"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Password * (min 8)</label><input class="inp" id="sw_pwd" type="password" placeholder="••••••••"></div>
+      <div class="fg"><label>School Phone</label><input class="inp" id="sw_phone" placeholder="+256 XXX XXXXXX"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;margin-top:6px" onclick="doSetup()">🚀 Initialize System</button>
+    <div class="auth-msg" id="setupMsg"></div>
+  </div>
+
+  <!-- Login -->
+  <div id="sLogin" class="auth-box" style="display:none;max-width:400px">
+    <div class="auth-logo">🚌</div>
+    <div class="auth-title">Sign In</div>
+    <div class="auth-sub" id="loginSchool">BusTrack Pro</div>
+    <div class="fg" style="margin-top:8px"><label>Email Address</label><input class="inp" id="lEmail" type="email" placeholder="your@email.com" autocomplete="email"></div>
+    <div class="fg"><label>Password</label><input class="inp" id="lPwd" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="doLogin()">Sign In →</button>
+    <div class="auth-msg" id="loginMsg"></div>
+    <p style="text-align:center;font-size:11px;color:var(--faint);margin-top:16px">BusTrack Pro v4.0 · Jinja Senior Secondary School · Uganda 2026</p>
+  </div>
+
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;height:100vh">
+  <div id="sbOverlay" onclick="closeSB()"></div>
+  <div id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">🚌</div>
+      <div class="sb-title">BusTrack Pro<small id="sbSchool">—</small></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-ava" id="sbAva">?</div>
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sbName">—</div>
+        <div style="font-size:11px;color:var(--muted)" id="sbRole">—</div>
+      </div>
+    </div>
+    <div class="sb-nav" id="sbNav"></div>
+    <div class="sb-bot">
+      <div id="pwaBtn" style="display:none;margin-bottom:8px">
+        <button class="btn btn-accent btn-sm" style="width:100%;justify-content:center" onclick="installPWA()">📱 Install App</button>
+      </div>
+      <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="topbar">
+      <button class="topbar-ico" onclick="toggleSB()">☰</button>
+      <span id="topTitle" style="font-weight:700;font-size:15px;flex:1">Dashboard</span>
+      <span id="gpsBadge" class="gps-badge">📡 GPS</span>
+      <span id="onlineBadge" class="ob-badge ob-on">● Online</span>
+    </div>
+    <div id="page"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modalBack">
+  <div id="modalBox">
+    <div class="modal-hd">
+      <span class="modal-title" id="modalTitle"></span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-ft" id="modalFt">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toasts"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+const API = (() => {
+  const h = window.location.hostname;
+  const proto = window.location.protocol;
+  if (!h || h === '' || h === 'localhost' || h === '127.0.0.1')
+    return 'http://localhost:8080/api';
+  if (h.includes('ngrok'))
+    return proto + '//' + h + '/api';
+  return proto + '//' + h + ':8080/api';
+})();
+
+let TOKEN  = localStorage.getItem('bt_token') || '';
+let USER   = (() => { try { return JSON.parse(localStorage.getItem('bt_user') || 'null'); } catch(e) { return null; } })();
+let SCHOOL = localStorage.getItem('bt_school') || 'BusTrack Pro';
+let currentPage = '', activeMap = null, mapMarkers = {};
+let gpsWatchId = null, offlineQueue = [], isOnline = navigator.onLine;
+let deferredInstall = null;
+
+try { offlineQueue = JSON.parse(localStorage.getItem('bt_gps_q') || '[]'); } catch(e) {}
+
+// ════════════════════════════════════════════════════════
+//  API
+// ════════════════════════════════════════════════════════
+async function api(method, path, data) {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, API + path, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('ngrok-skip-browser-warning', 'true');
+    if (TOKEN) xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
+    xhr.timeout = 8000;
+    xhr.onload = function() {
+      try {
+        const j = JSON.parse(xhr.responseText);
+        if (xhr.status === 401) { logout(); resolve(null); return; }
+        resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data: j });
+      } catch(e) {
+        console.error('[API] parse error:', e.message, xhr.responseText);
+        resolve({ ok: false, data: { error: 'Invalid response from server' } });
+      }
+    };
+    xhr.onerror   = () => { console.error('[API] network error:', method, path); resolve({ ok: false, data: { error: 'Network error - server may be offline' } }); };
+    xhr.ontimeout = () => { console.error('[API] timeout:', method, path); resolve({ ok: false, data: { error: 'Request timed out' } }); };
+    xhr.send(data ? JSON.stringify(data) : null);
+  });
+}
+const GET    = p     => api('GET', p);
+const POST   = (p,d) => api('POST', p, d);
+const PUT    = (p,d) => api('PUT', p, d);
+const DELETE = p     => api('DELETE', p);
+
+// ════════════════════════════════════════════════════════
+//  INIT — simple, robust, no complex splash
+// ════════════════════════════════════════════════════════
+async function init() {
+  const msgEl = document.getElementById('checkMsg');
+
+  // Try up to 5 times with delay
+  let r = null;
+  for (let i = 1; i <= 5; i++) {
+    if (msgEl) msgEl.textContent = i === 1 ? 'Connecting to server…' : `Retrying… (${i}/5)`;
+    r = await GET('/system/status');
+    if (r && r.ok) break;
+    await new Promise(res => setTimeout(res, 1200));
+  }
+
+  if (!r || !r.ok) {
+    if (msgEl) msgEl.textContent =
+      '❌ Cannot connect. Make sure server.py is running, then press F5.';
+    document.querySelector('#sChecking div[style*="margin-top:18px"]').style.display = 'none';
+    return;
+  }
+
+  SCHOOL = r.data.school_name || 'BusTrack Pro';
+  localStorage.setItem('bt_school', SCHOOL);
+
+  if (!r.data.initialized) {
+    showScreen('sSetup');
+    return;
+  }
+
+  if (TOKEN && USER) {
+    enterApp();
+    return;
+  }
+
+  showScreen('sLogin');
+  document.getElementById('loginSchool').textContent = SCHOOL;
+}
+
+function showScreen(id) {
+  ['sChecking', 'sSetup', 'sLogin'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
+function enterApp() {
+  document.getElementById('screenWrap').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  buildSidebar();
+  updateOnlineBadge();
+  // Navigate to home page based on role
+  if (USER.role === 'driver') navigate('driver-home');
+  else if (USER.role === 'parent') navigate('parent-home');
+  else navigate('dashboard');
+}
+
+// ════════════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════════════
+async function doSetup() {
+  const school = document.getElementById('sw_school').value.trim();
+  const name   = document.getElementById('sw_name').value.trim();
+  const email  = document.getElementById('sw_email').value.trim();
+  const pwd    = document.getElementById('sw_pwd').value;
+  const addr   = document.getElementById('sw_addr').value.trim();
+  const phone  = document.getElementById('sw_phone').value.trim();
+  const msg    = document.getElementById('setupMsg');
+
+  if (!school || !name || !email || !pwd) { msg.textContent = '❌ Fill in all required fields'; return; }
+  if (pwd.length < 8) { msg.textContent = '❌ Password must be at least 8 characters'; return; }
+
+  msg.textContent = 'Setting up…';
+  const r = await POST('/auth/setup', { school_name: school, school_address: addr, school_phone: phone, full_name: name, email, password: pwd });
+  if (!r || !r.ok) { msg.textContent = '❌ ' + (r?.data?.error || 'Setup failed'); return; }
+
+  TOKEN  = r.data.token;
+  USER   = r.data.user;
+  SCHOOL = school;
+  localStorage.setItem('bt_token', TOKEN);
+  localStorage.setItem('bt_user', JSON.stringify(USER));
+  localStorage.setItem('bt_school', SCHOOL);
+  toast('🎉 BusTrack Pro v4 initialized!', 'success');
+  enterApp();
+}
+
+async function doLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pwd   = document.getElementById('lPwd').value;
+  const msg   = document.getElementById('loginMsg');
+  if (!email || !pwd) { msg.textContent = '❌ Enter email and password'; return; }
+  msg.textContent = 'Signing in…';
+  const r = await POST('/auth/login', { email, password: pwd });
+  if (!r || !r.ok) { msg.textContent = '❌ ' + (r?.data?.error || 'Login failed'); return; }
+  TOKEN = r.data.token;
+  USER  = r.data.user;
+  localStorage.setItem('bt_token', TOKEN);
+  localStorage.setItem('bt_user', JSON.stringify(USER));
+  toast('Welcome, ' + USER.full_name + '!', 'success');
+  enterApp();
+}
+
+function logout() {
+  POST('/auth/logout', {});
+  TOKEN = ''; USER = null;
+  localStorage.removeItem('bt_token');
+  localStorage.removeItem('bt_user');
+  stopGPS();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('screenWrap').style.display = 'flex';
+  showScreen('sChecking');
+  init();
+}
+
+// ════════════════════════════════════════════════════════
+//  SIDEBAR & NAVIGATION
+// ════════════════════════════════════════════════════════
+function buildSidebar() {
+  document.getElementById('sbSchool').textContent = SCHOOL;
+  document.getElementById('sbName').textContent   = USER.full_name;
+  document.getElementById('sbRole').textContent   = USER.role;
+  document.getElementById('sbAva').textContent    = (USER.full_name || 'U')[0].toUpperCase();
+
+  const navs = {
+    admin: [
+      { sec: 'Overview' },
+      { id:'dashboard',    icon:'📊', label:'Dashboard' },
+      { id:'live-map',     icon:'🗺️', label:'Live Map' },
+      { sec: 'Fleet' },
+      { id:'buses',        icon:'🚌', label:'Buses' },
+      { id:'drivers',      icon:'🚗', label:'Drivers' },
+      { id:'routes',       icon:'📍', label:'Routes & Stops' },
+      { sec: 'Students' },
+      { id:'students',     icon:'👥', label:'Students' },
+      { id:'parents',      icon:'👨‍👧', label:'Parents' },
+      { sec: 'Operations' },
+      { id:'trips',        icon:'🛣️', label:'Trips' },
+      { id:'alerts',       icon:'🚨', label:'Alerts' },
+      { id:'notifications',icon:'🔔', label:'Notifications' },
+      { sec: 'Analytics' },
+      { id:'reports',      icon:'📈', label:'Reports' },
+      { id:'audit',        icon:'📋', label:'Audit Log' },
+      { id:'settings',     icon:'⚙️', label:'Settings' },
+    ],
+    driver: [
+      { id:'driver-home',     icon:'🏠', label:'My Dashboard' },
+      { id:'live-map',        icon:'🗺️', label:'Live Map' },
+      { id:'driver-manifest', icon:'📋', label:'Student Manifest' },
+      { id:'driver-gps',      icon:'📡', label:'GPS Status' },
+      { id:'notifications',   icon:'🔔', label:'Notifications' },
+    ],
+    parent: [
+      { id:'parent-home',  icon:'🏠', label:'My Dashboard' },
+      { id:'live-map',     icon:'🗺️', label:'Track Bus' },
+      { id:'parent-eta',   icon:'⏱️', label:'Bus ETA' },
+      { id:'notifications',icon:'🔔', label:'Notifications' },
+    ],
+  };
+
+  const items = navs[USER.role] || [];
+  let html = '';
+  items.forEach(item => {
+    if (item.sec) {
+      html += `<div class="nav-sec">${item.sec}</div>`;
+    } else {
+      html += `<div class="nav-item" id="nav-${item.id}" onclick="navigate('${item.id}')">
+        <span class="ni">${item.icon}</span><span>${item.label}</span>
+      </div>`;
+    }
+  });
+  document.getElementById('sbNav').innerHTML = html;
+}
+
+function navigate(pageId) {
+  currentPage = pageId;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById('nav-' + pageId);
+  if (nav) nav.classList.add('active');
+  const titles = {
+    'dashboard':'Dashboard','live-map':'Live Map','buses':'Buses',
+    'drivers':'Drivers','routes':'Routes & Stops','students':'Students',
+    'parents':'Parents','trips':'Trips','alerts':'Alerts',
+    'notifications':'Notifications','reports':'Reports','audit':'Audit Log',
+    'settings':'Settings','driver-home':'Driver Dashboard',
+    'driver-manifest':'Student Manifest','driver-gps':'GPS Status',
+    'parent-home':'Parent Dashboard','parent-eta':'Bus ETA',
+  };
+  document.getElementById('topTitle').textContent = titles[pageId] || pageId;
+  closeSB();
+  if (activeMap) { try { activeMap.remove(); } catch(e){} activeMap = null; }
+  switch(pageId) {
+    case 'dashboard':       pageDashboard();     break;
+    case 'live-map':        pageLiveMap();       break;
+    case 'buses':           pageBuses();         break;
+    case 'drivers':         pageUsers('driver'); break;
+    case 'parents':         pageUsers('parent'); break;
+    case 'routes':          pageRoutes();        break;
+    case 'students':        pageStudents();      break;
+    case 'trips':           pageTrips();         break;
+    case 'alerts':          pageAlerts();        break;
+    case 'notifications':   pageNotifications(); break;
+    case 'reports':         pageReports();       break;
+    case 'audit':           pageAudit();         break;
+    case 'settings':        pageSettings();      break;
+    case 'driver-home':     pageDriverHome();    break;
+    case 'driver-manifest': pageDriverManifest(); break;
+    case 'driver-gps':      pageDriverGPS();     break;
+    case 'parent-home':     pageParentHome();    break;
+    case 'parent-eta':      pageParentETA();     break;
+    default:
+      pw(emptyState('🚧', 'Coming soon', 'This section is being built.'));
+  }
+}
+
+function pw(html) { document.getElementById('page').innerHTML = html; }
+
+// ════════════════════════════════════════════════════════
+//  PWA + ONLINE/OFFLINE
+// ════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredInstall = e;
+  document.getElementById('pwaBtn').style.display = 'block';
+});
+
+function installPWA() {
+  if (!deferredInstall) { toast('App already installed or browser does not support this', 'info'); return; }
+  deferredInstall.prompt();
+  deferredInstall.userChoice.then(r => {
+    if (r.outcome === 'accepted') toast('BusTrack Pro installed on your device!', 'success');
+    deferredInstall = null;
+    document.getElementById('pwaBtn').style.display = 'none';
+  });
+}
+
+window.addEventListener('online',  () => { isOnline = true;  updateOnlineBadge(); syncOfflineGPS(); });
+window.addEventListener('offline', () => { isOnline = false; updateOnlineBadge(); });
+
+function updateOnlineBadge() {
+  const b  = document.getElementById('onlineBanner');
+  const ob = document.getElementById('onlineBadge');
+  if (ob) { ob.textContent = isOnline ? '● Online' : '● Offline'; ob.className = 'ob-badge ' + (isOnline ? 'ob-on' : 'ob-off'); }
+  if (b)  { b.style.display = isOnline ? 'none' : 'block'; document.getElementById('offCount').textContent = offlineQueue.length; }
+}
+
+// ════════════════════════════════════════════════════════
+//  OFFLINE GPS QUEUE
+// ════════════════════════════════════════════════════════
+function storeOfflineGPS(point) {
+  offlineQueue.push({ ...point, recorded_at: new Date().toISOString() });
+  if (offlineQueue.length > 500) offlineQueue = offlineQueue.slice(-500);
+  try { localStorage.setItem('bt_gps_q', JSON.stringify(offlineQueue)); } catch(e) {}
+  document.getElementById('offCount').textContent = offlineQueue.length;
+}
+
+async function syncOfflineGPS() {
+  if (!isOnline || offlineQueue.length === 0) return;
+  const r = await POST('/gps/batch', { points: offlineQueue });
+  if (r && r.ok) {
+    toast('📶 Back online! ' + offlineQueue.length + ' GPS points synced', 'success');
+    offlineQueue = [];
+    localStorage.removeItem('bt_gps_q');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  GPS
+// ════════════════════════════════════════════════════════
+function startGPS(busId, tripId) {
+  if (gpsWatchId) navigator.geolocation?.clearWatch(gpsWatchId);
+  document.getElementById('gpsBadge').style.display = 'inline-flex';
+  let lastSent = 0;
+  gpsWatchId = navigator.geolocation?.watchPosition(async pos => {
+    const now = Date.now();
+    if (now - lastSent < 5000) return;
+    lastSent = now;
+    const point = {
+      trip_id: tripId, bus_id: busId,
+      latitude: pos.coords.latitude, longitude: pos.coords.longitude,
+      speed_kmh: pos.coords.speed ? pos.coords.speed * 3.6 : 0,
+      heading: pos.coords.heading || 0, accuracy_m: pos.coords.accuracy,
+      recorded_at: new Date().toISOString()
+    };
+    if (isOnline) {
+      const r = await POST('/gps', point);
+      if (!r || !r.ok) storeOfflineGPS(point);
+    } else {
+      storeOfflineGPS(point);
+    }
+  }, err => console.log('[GPS]', err.message),
+  { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 });
+}
+
+function stopGPS() {
+  if (gpsWatchId) { navigator.geolocation?.clearWatch(gpsWatchId); gpsWatchId = null; }
+  document.getElementById('gpsBadge').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════
+//  SOS
+// ════════════════════════════════════════════════════════
+async function triggerSOS() {
+  if (!confirm('🚨 SEND SOS EMERGENCY?\n\nThis will immediately alert ALL admins via SMS and WhatsApp!')) return;
+  const send = async (lat, lon) => {
+    const r = await POST('/sos', { latitude: lat, longitude: lon, message: 'SOS EMERGENCY from ' + USER.full_name + '!' });
+    if (r && r.ok) toast('🚨 SOS SENT! All admins notified!', 'error');
+    else toast('Error sending SOS — try again', 'error');
+  };
+  navigator.geolocation?.getCurrentPosition(
+    pos => send(pos.coords.latitude, pos.coords.longitude),
+    ()  => send(null, null)
+  );
+}
+
+// ════════════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════════════
+async function pageDashboard() {
+  const [sR, aR] = await Promise.all([GET('/dashboard/stats'), GET('/alerts')]);
+  const s = sR?.data || {}, alerts = (aR?.data || []).filter(a => !a.is_resolved).slice(0, 5);
+  const sosR = await GET('/sos/active'); const sos = sosR?.data || [];
+  pw(`
+  <div class="page-header"><h1>Admin Dashboard 📊</h1><p>${SCHOOL} — BusTrack Pro v4.0</p></div>
+  ${sos.length > 0 ? `<div class="alert-bar ab-sos">🚨 <strong>${sos.length} ACTIVE SOS ALERT${sos.length > 1 ? 'S' : ''}!</strong>
+    ${sos.map(s2 => `<span>Driver: ${s2.driver_name || '?'} · Bus: ${s2.bus_code || '?'}
+    <button class="btn btn-success btn-xs" onclick="resolveSOS(${s2.id})" style="margin-left:6px">✓ Resolve</button></span>`).join('')}
+  </div>` : ''}
+  <div class="stats-grid">
+    <div class="stat c-green"><div class="stat-val">${s.active_buses||0}</div><div class="stat-lbl">Buses Active</div><span class="stat-icon">🚌</span></div>
+    <div class="stat c-blue"><div class="stat-val">${s.students_in_transit||0}</div><div class="stat-lbl">In Transit</div><span class="stat-icon">👥</span></div>
+    <div class="stat"><div class="stat-val">${s.active_trips||0}</div><div class="stat-lbl">Active Trips</div><span class="stat-icon">🛣️</span></div>
+    <div class="stat c-warn"><div class="stat-val">${s.geofence_events_today||0}</div><div class="stat-lbl">Geofence Events</div><span class="stat-icon">🗺️</span></div>
+    <div class="stat ${sos.length > 0 ? 'c-red' : ''}"><div class="stat-val">${sos.length}</div><div class="stat-lbl">Active SOS</div><span class="stat-icon">🚨</span></div>
+    <div class="stat"><div class="stat-val">${s.stop_notifications_today||0}</div><div class="stat-lbl">Stop Alerts Today</div><span class="stat-icon">📣</span></div>
+    <div class="stat"><div class="stat-val">${s.total_students||0}</div><div class="stat-lbl">Total Students</div><span class="stat-icon">👦</span></div>
+    <div class="stat"><div class="stat-val">${s.total_stops||0}</div><div class="stat-lbl">Stops Registered</div><span class="stat-icon">📍</span></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-title">🚨 Unresolved Alerts</div>
+        <button class="btn btn-sm btn-secondary" onclick="navigate('alerts')">View All</button></div>
+      <div class="card-body">
+        ${alerts.length === 0 ? `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">✅ All clear!</div>`
+        : alerts.map(a => `<div class="row-item">
+          <div><div style="font-size:13px;font-weight:600">${a.title}</div>
+            <div style="font-size:11px;color:var(--muted)">${timeAgo(a.created_at)} · ${(a.alert_type||'').replace(/_/g,' ')}</div></div>
+          <span class="badge ${a.severity==='critical'||a.severity==='high'?'b-red':'b-warn'}">${a.severity}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-title">📊 Fleet Overview</div>
+        <button class="btn btn-sm btn-primary" onclick="navigate('live-map')">🗺️ Map</button></div>
+      <div class="card-body">
+        ${[['🚌','Total Buses',s.total_buses||0],['✅','Active Now',s.active_buses||0],['🚗','Drivers',s.total_drivers||0],['👨‍👧','Parents',s.total_parents||0],['👥','Students',s.total_students||0],['📍','Stops',s.total_stops||0]].map(([icon,lbl,val]) =>
+        `<div class="row-item"><span class="row-label">${icon} ${lbl}</span><strong>${val}</strong></div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-hd-title">🚀 Quick Actions</div></div>
+    <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="navigate('live-map')">🗺️ Live Map</button>
+      <button class="btn btn-secondary" onclick="navigate('routes')">📍 Stops</button>
+      <button class="btn btn-secondary" onclick="navigate('students')">👥 Students</button>
+      <button class="btn btn-secondary" onclick="navigate('trips')">🛣️ Trips</button>
+      <button class="btn btn-warn" onclick="navigate('alerts')">🚨 Alerts</button>
+      <button class="btn btn-secondary" onclick="openSendNotifModal()">📩 Notify All</button>
+    </div>
+  </div>`);
+}
+
+// ════════════════════════════════════════════════════════
+//  LIVE MAP — OpenStreetMap + Leaflet
+// ════════════════════════════════════════════════════════
+async function pageLiveMap() {
+  const [fleetR, stopsR, tripsR] = await Promise.all([GET('/buses/fleet'), GET('/stops'), GET('/trips/active')]);
+  const fleet = fleetR?.data || [], stops = stopsR?.data || [], trips = tripsR?.data || [];
+
+  pw(`<div style="display:grid;grid-template-columns:1fr 270px;gap:14px;height:calc(100vh - 134px)">
+    <div class="map-wrap"><div id="leafletMap"></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;overflow-y:auto;height:100%">
+      <div class="card" style="flex-shrink:0">
+        <div class="card-hd"><div class="card-hd-title">🚌 Fleet</div><button class="btn btn-xs btn-secondary" onclick="pageLiveMap()">↻ Refresh</button></div>
+        <div style="padding:8px 12px">
+          ${fleet.length === 0 ? `<div style="color:var(--muted);font-size:12px;padding:12px;text-align:center">No buses registered</div>`
+          : fleet.map(b => `<div style="background:var(--surf2);border-radius:8px;padding:9px;margin-bottom:7px;cursor:pointer;border:1px solid var(--border)" onclick="focusBus(${b.current_lat||0.44},${b.current_lng||33.20},'${b.bus_code}')">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span>${b.status==='active'?'🟢':b.status==='idle'?'🟡':'⚫'}</span>
+              <strong style="font-family:var(--mono)">${b.bus_code}</strong>
+              <span class="badge ${b.status==='active'?'b-green':'b-grey'}" style="margin-left:auto;font-size:10px">${b.status}</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">${b.driver_name||'No driver'} · 👥${b.student_count||0}</div>
+            ${b.current_speed_kmh > 0 ? `<div style="font-size:11px;color:var(--accent2);font-family:var(--mono)">📡 ${b.current_speed_kmh?.toFixed(0)} km/h</div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>
+      ${USER.role === 'admin' ? `<div class="card" style="flex-shrink:0">
+        <div class="card-hd"><div class="card-hd-title">📣 Notify Parents at Stop</div></div>
+        <div style="padding:8px 12px">
+          ${stops.slice(0,4).map(s => `<button class="btn btn-secondary btn-xs" style="width:100%;margin-bottom:5px;justify-content:flex-start;text-align:left" onclick="notifyStop(${s.id},'${(s.stop_name||'').replace(/'/g,"\\'")}')">
+            📣 Stop ${s.stop_order}: ${s.stop_name}
+          </button>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-title">⏱️ ETAs</div></div>
+        <div style="padding:8px 12px" id="etaList">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">${trips.length === 0 ? 'No active trips' : 'Loading…'}</div>
+        </div>
+      </div>
+    </div>
+  </div>`);
+
+  // Init Leaflet map
+  setTimeout(async () => {
+    if (!window.L) { toast('Map library loading — check internet connection', 'warning'); return; }
+    activeMap = L.map('leafletMap', { center: [0.44, 33.20], zoom: 13 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(activeMap);
+
+    window.focusBus = (lat, lng, code) => { if (lat && lng) activeMap.flyTo([lat, lng], 15); };
+
+    // School marker
+    const schoolIco = L.divIcon({ html: `<div style="background:#0A2463;border:3px solid #FF6B35;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 12px rgba(0,0,0,.5)">🏫</div>`, iconSize:[34,34], iconAnchor:[17,17], className:'' });
+    L.marker([0.44, 33.20], { icon: schoolIco }).addTo(activeMap).bindPopup(`<strong>${SCHOOL}</strong>`);
+
+    // Stop markers
+    stops.forEach(s => {
+      if (!s.latitude || !s.longitude) return;
+      const ico = L.divIcon({ html: `<div style="background:#FF6B35;border:2px solid #fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)">${s.stop_order}</div>`, iconSize:[26,26], iconAnchor:[13,13], className:'' });
+      L.marker([s.latitude, s.longitude], { icon: ico }).addTo(activeMap)
+       .bindPopup(`<strong>Stop ${s.stop_order}: ${s.stop_name}</strong><br>${s.landmark||''}<br>⬆ ${s.scheduled_morning_time||'TBD'} · ⬇ ${s.scheduled_afternoon_time||'TBD'}<br>👥 ${(s.pickup_students||0)+(s.dropoff_students||0)} students`);
+    });
+
+    // Bus markers
+    fleet.forEach(b => {
+      if (!b.current_lat || !b.current_lng) return;
+      const ico = L.divIcon({ html: `<div style="background:${b.status==='active'?'#00D9B0':'#7089B8'};border:2px solid #fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 10px rgba(0,0,0,.4)">🚌</div>`, iconSize:[34,34], iconAnchor:[17,17], className:'' });
+      mapMarkers[b.id] = L.marker([b.current_lat, b.current_lng], { icon: ico })
+        .addTo(activeMap)
+        .bindPopup(`<strong>${b.bus_code}</strong><br>${b.driver_name||'—'}<br>Speed: ${b.current_speed_kmh?.toFixed(0)||0} km/h<br>Students: ${b.student_count||0}`);
+    });
+
+    // Auto-refresh positions
+    const refresh = setInterval(async () => {
+      if (currentPage !== 'live-map') { clearInterval(refresh); return; }
+      const fr = await GET('/buses/fleet');
+      (fr?.data||[]).forEach(b => {
+        if (mapMarkers[b.id] && b.current_lat && b.current_lng)
+          mapMarkers[b.id].setLatLng([b.current_lat, b.current_lng]);
+      });
+    }, 5000);
+
+    // Load ETAs
+    if (trips.length > 0) {
+      const er = await GET(`/trips/${trips[0].id}/stops`);
+      const etaEl = document.getElementById('etaList');
+      if (etaEl && er?.data) {
+        etaEl.innerHTML = (er.data||[]).map(s => `<div class="eta-row">
+          <div class="eta-num">${s.stop_order}</div>
+          <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.stop_name}</div>
+          <div style="font-size:11px;color:var(--muted)">${s.status}</div></div>
+          <div class="eta-val ${s.eta_minutes&&s.eta_minutes<2?'arriving':''}">${s.status==='arrived'?'✅':s.eta_minutes?'~'+Math.round(s.eta_minutes)+'m':'—'}</div>
+        </div>`).join('');
+      }
+    }
+  }, 100);
+}
+
+async function notifyStop(stopId, stopName) {
+  const tr = await GET('/trips/active'); const trips = tr?.data || [];
+  if (trips.length === 0) { toast('No active trip — start a trip first', 'warning'); return; }
+  const mins = prompt(`Bus is how many minutes away from "${stopName}"?`, '2');
+  if (!mins) return;
+  const r = await POST('/trips/notify-stop', { trip_id: trips[0].id, stop_id: stopId, minutes_away: parseInt(mins) });
+  if (!r || !r.ok) { toast(r?.data?.error || 'Error', 'error'); return; }
+  toast(`✅ Parents at ${stopName} notified via SMS + WhatsApp!`, 'success');
+}
+
+// ════════════════════════════════════════════════════════
+//  ROUTES & STOPS (with students per stop)
+// ════════════════════════════════════════════════════════
+async function pageRoutes() {
+  const r = await GET('/routes'); const routes = r?.data || [];
+  pw(`
+  <div class="page-header"><h1>Routes, Stops & Students 🗺</h1>
+    <p>Manage pickup/dropoff points · Register students under each stop · Notify parents</p>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="openAddRouteModal()">+ Add Route</button>
+  </div>
+  ${routes.length === 0
+    ? `<div class="card">${emptyState('🗺', 'No Routes Yet', 'Create a route then add pickup/dropoff stops.', `<button class="btn btn-primary" style="margin-top:12px" onclick="openAddRouteModal()">+ Create Route</button>`)}</div>`
+    : routes.map(ro => `<div class="card" style="margin-bottom:20px">
+      <div class="card-hd">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;font-size:13px;flex-shrink:0">${ro.route_code.replace('ROUTE-','')}</div>
+          <div><div style="font-weight:700;font-size:15px">${ro.route_name}</div>
+          <div style="font-size:11.5px;color:var(--muted)">${ro.stop_count||0} stops · ${ro.direction}</div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span class="badge ${ro.is_active?'b-green':'b-grey'}">${ro.is_active?'Active':'Inactive'}</span>
+          <button class="btn btn-sm btn-primary" onclick="openAddStopModal(${ro.id},'${(ro.route_name||'').replace(/'/g,"\\'")}')">+ Add Stop</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteRoute(${ro.id},'${(ro.route_name||'').replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </div>
+      <div style="padding:0 18px 18px" id="stops-${ro.id}"><div style="color:var(--muted);font-size:12px;padding:10px 0">Loading stops…</div></div>
+    </div>`).join('')}`);
+  routes.forEach(ro => loadStopsWithStudents(ro.id));
+}
+
+async function loadStopsWithStudents(rid) {
+  const stopsR = await GET(`/routes/${rid}/stops`);
+  const stops  = stopsR?.data || [];
+  const el     = document.getElementById('stops-' + rid);
+  if (!el) return;
+  if (stops.length === 0) { el.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:6px 0">No stops yet — click "+ Add Stop"</div>`; return; }
+  const studs = {};
+  await Promise.all(stops.map(async s => { const sr = await GET(`/stops/${s.id}/students`); studs[s.id] = sr?.data||[]; }));
+  const ptColor = pt => pt==='pickup'?'b-green':pt==='dropoff'?'b-orange':'b-blue';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px;margin-top:6px">
+  ${stops.map(s => {
+    const ss = studs[s.id]||[], pk = ss.filter(x=>x.stop_type==='pickup'), dr = ss.filter(x=>x.stop_type==='dropoff');
+    return `<div class="stop-card">
+      <div class="stop-hd">
+        <div class="stop-num">${s.stop_order}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.stop_name}</div>
+        ${s.landmark?`<div style="font-size:10.5px;color:var(--muted)">${s.landmark}</div>`:''}</div>
+        <span class="badge ${ptColor(s.point_type)}" style="font-size:9.5px;flex-shrink:0">${s.point_type||'both'}</span>
+      </div>
+      <div style="padding:6px 13px;display:flex;gap:12px;border-bottom:1px solid var(--border);font-size:11px">
+        ${s.scheduled_morning_time?`<span>⬆ <strong>${s.scheduled_morning_time}</strong></span>`:''}
+        ${s.scheduled_afternoon_time?`<span>⬇ <strong>${s.scheduled_afternoon_time}</strong></span>`:''}
+        <span style="margin-left:auto;color:var(--muted)">${ss.length} student${ss.length!==1?'s':''}</span>
+      </div>
+      <div class="stop-body">
+        ${ss.length===0?`<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">No students here yet</div>`
+        :`${pk.length>0?`<div style="font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--success);font-weight:600;margin-bottom:4px">⬆ Pickup (${pk.length})</div>
+          ${pk.map(st=>`<div class="stop-stu"><div class="stu-av" style="background:linear-gradient(135deg,var(--accent2),var(--primary))">${(st.full_name||'S')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.full_name}</div><div style="font-size:10px;color:var(--muted)">${st.class_name||''}</div></div></div>`).join('')}`:''}
+          ${dr.length>0?`<div style="font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);font-weight:600;margin:${pk.length?'8':'0'}px 0 4px">⬇ Dropoff (${dr.length})</div>
+          ${dr.map(st=>`<div class="stop-stu"><div class="stu-av" style="background:linear-gradient(135deg,var(--accent),var(--danger))">${(st.full_name||'S')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.full_name}</div><div style="font-size:10px;color:var(--muted)">${st.class_name||''}</div></div></div>`).join('')}`:''}
+        `}
+      </div>
+      <div class="stop-ft">
+        <button class="btn btn-success btn-xs" style="flex:1" onclick="notifyStop(${s.id},'${(s.stop_name||'').replace(/'/g,"\\'")}')">📣 Notify Parents</button>
+        <button class="btn btn-secondary btn-xs" onclick="openAddStudentToStopModal(${s.id},'${(s.stop_name||'').replace(/'/g,"\\'")}',${rid})">+ Student</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function openAddRouteModal() {
+  openModal('Create New Route', `
+    <div class="form-row">
+      <div class="fg"><label>Route Code *</label><input class="inp" id="mr_code" placeholder="ROUTE-A"></div>
+      <div class="fg"><label>Route Name *</label><input class="inp" id="mr_name" placeholder="Kabalagala Route"></div>
+    </div>
+    <div class="fg"><label>Description</label><textarea class="inp" id="mr_desc" placeholder="Brief description…" rows="2"></textarea></div>
+    <div class="form-row">
+      <div class="fg"><label>Direction</label><select class="inp" id="mr_dir"><option value="both">Both directions</option><option value="to_school">To school only</option><option value="from_school">From school only</option></select></div>
+      <div class="fg"><label>Geofence (metres)</label><input class="inp" id="mr_geo" type="number" value="200"></div>
+    </div>`,
+    `<button class="btn btn-primary" onclick="submitAddRoute()">Create Route</button>`);
+}
+
+async function submitAddRoute() {
+  const body = { route_code: document.getElementById('mr_code')?.value?.trim()?.toUpperCase(), route_name: document.getElementById('mr_name')?.value?.trim(), description: document.getElementById('mr_desc')?.value?.trim(), direction: document.getElementById('mr_dir')?.value, geofence_radius_m: parseInt(document.getElementById('mr_geo')?.value||200) };
+  if (!body.route_code || !body.route_name) { toast('Route code and name required', 'error'); return; }
+  const r = await POST('/routes', body);
+  if (!r || !r.ok) { toast(r?.data?.error || 'Error', 'error'); return; }
+  toast('✅ Route created!', 'success'); closeModal(); pageRoutes();
+}
+
+function openAddStopModal(routeId, routeName) {
+  openModal(`Add Stop — ${routeName}`, `
+    <div class="form-row"><div class="fg"><label>Stop Name *</label><input class="inp" id="ms_name" placeholder="e.g. Kabalagala Market"></div><div class="fg"><label>Order *</label><input class="inp" id="ms_order" type="number" min="1" placeholder="1"></div></div>
+    <div class="form-row"><div class="fg"><label>Stop Type</label><select class="inp" id="ms_type"><option value="both">Pickup & Dropoff</option><option value="pickup">Pickup only</option><option value="dropoff">Dropoff only</option></select></div><div class="fg"><label>Notify Before (mins)</label><input class="inp" id="ms_notif" type="number" value="2"></div></div>
+    <div class="form-row"><div class="fg"><label>Morning Time</label><input class="inp" id="ms_mtime" type="time"></div><div class="fg"><label>Afternoon Time</label><input class="inp" id="ms_atime" type="time"></div></div>
+    <div class="fg"><label>Landmark</label><input class="inp" id="ms_land" placeholder="Near the main market"></div>
+    <div class="form-row"><div class="fg"><label>GPS Latitude</label><input class="inp" id="ms_lat" type="number" step="any" placeholder="0.3241"></div><div class="fg"><label>GPS Longitude</label><input class="inp" id="ms_lng" type="number" step="any" placeholder="32.5811"></div></div>
+    <button class="btn btn-secondary btn-sm" onclick="getMyLoc('ms_lat','ms_lng')">📍 Use My Location</button>`,
+    `<button class="btn btn-primary" onclick="submitStop(${routeId})">Add Stop</button>`);
+}
+
+async function submitStop(routeId) {
+  const body = { route_id: routeId, stop_name: document.getElementById('ms_name')?.value?.trim(), stop_order: document.getElementById('ms_order')?.value, point_type: document.getElementById('ms_type')?.value, notify_parents_minutes: parseInt(document.getElementById('ms_notif')?.value||2), scheduled_morning_time: document.getElementById('ms_mtime')?.value||null, scheduled_afternoon_time: document.getElementById('ms_atime')?.value||null, landmark: document.getElementById('ms_land')?.value?.trim(), latitude: document.getElementById('ms_lat')?.value||null, longitude: document.getElementById('ms_lng')?.value||null };
+  if (!body.stop_name || !body.stop_order) { toast('Stop name and order required', 'error'); return; }
+  const r = await POST('/routes/stops', body);
+  if (!r || !r.ok) { toast(r?.data?.error || 'Error', 'error'); return; }
+  toast('✅ Stop added!', 'success'); closeModal(); pageRoutes();
+}
+
+async function openAddStudentToStopModal(stopId, stopName, routeId) {
+  const [busesR, parentsR] = await Promise.all([GET('/buses'), GET('/users?role=parent')]);
+  const buses = busesR?.data||[], parents = parentsR?.data||[];
+  openModal(`Enroll Student at — ${stopName}`, `
+    <div style="background:var(--surf2);border-radius:8px;padding:9px 13px;margin-bottom:13px;font-size:13px">📍 <strong>${stopName}</strong></div>
+    <div class="form-row"><div class="fg"><label>Student Number *</label><input class="inp" id="ss_no" placeholder="2024/001"></div><div class="fg"><label>Full Name *</label><input class="inp" id="ss_name" placeholder="Student full name"></div></div>
+    <div class="form-row"><div class="fg"><label>Class</label><input class="inp" id="ss_class" placeholder="S4A"></div><div class="fg"><label>Gender</label><select class="inp" id="ss_gender"><option value="">--</option><option value="male">Male</option><option value="female">Female</option></select></div></div>
+    <div class="form-row"><div class="fg"><label>Assign Bus</label><select class="inp" id="ss_bus"><option value="">-- Select --</option>${buses.map(b=>`<option value="${b.id}">${b.bus_code} — ${b.plate_number}</option>`).join('')}</select></div><div class="fg"><label>Stop Type</label><select class="inp" id="ss_stype"><option value="both">Pickup & Dropoff</option><option value="pickup">Pickup only</option><option value="dropoff">Dropoff only</option></select></div></div>
+    <div class="fg"><label>Primary Parent *</label><select class="inp" id="ss_p1"><option value="">-- Select --</option>${parents.map(p=>`<option value="${p.id}">${p.full_name} (${p.phone||p.email})</option>`).join('')}</select></div>
+    <div class="fg"><label>Second Parent (optional)</label><select class="inp" id="ss_p2"><option value="">-- None --</option>${parents.map(p=>`<option value="${p.id}">${p.full_name} (${p.phone||p.email})</option>`).join('')}</select></div>
+    <div class="form-row"><div class="fg"><label>Emergency Contact</label><input class="inp" id="ss_emg" placeholder="Name"></div><div class="fg"><label>Emergency Phone</label><input class="inp" id="ss_emgph" placeholder="+256 XXX XXXXXX"></div></div>`,
+    `<button class="btn btn-primary" onclick="submitStudentToStop(${stopId},${routeId})">Enroll Student</button>`);
+}
+
+async function submitStudentToStop(stopId, routeId) {
+  const no = document.getElementById('ss_no')?.value?.trim(), name = document.getElementById('ss_name')?.value?.trim();
+  const p1 = document.getElementById('ss_p1')?.value||null, p2 = document.getElementById('ss_p2')?.value||null;
+  const stype = document.getElementById('ss_stype')?.value||'both';
+  if (!no||!name) { toast('Student number and name required','error'); return; }
+  if (!p1) { toast('At least one parent required','error'); return; }
+  const pids = [parseInt(p1)]; if (p2 && p2 !== p1) pids.push(parseInt(p2));
+  const body = { student_number:no, full_name:name, class_name:document.getElementById('ss_class')?.value?.trim(), gender:document.getElementById('ss_gender')?.value||null, bus_id:document.getElementById('ss_bus')?.value?parseInt(document.getElementById('ss_bus').value):null, pickup_stop_id:(stype==='pickup'||stype==='both')?stopId:null, dropoff_stop_id:(stype==='dropoff'||stype==='both')?stopId:null, parent_ids:pids, emergency_contact:document.getElementById('ss_emg')?.value?.trim(), emergency_phone:document.getElementById('ss_emgph')?.value?.trim() };
+  const r = await POST('/students', body);
+  if (!r||!r.ok) { toast(r?.data?.error||'Error','error'); return; }
+  toast(`✅ ${name} enrolled! Parents notified via SMS.`,'success');
+  closeModal(); loadStopsWithStudents(routeId);
+}
+
+async function deleteRoute(id, name) {
+  if (!confirm(`Deactivate route "${name}"?`)) return;
+  await DELETE(`/routes/${id}`); toast('Route deactivated','warning'); pageRoutes();
+}
+
+// ════════════════════════════════════════════════════════
+//  STUDENTS
+// ════════════════════════════════════════════════════════
+async function pageStudents() {
+  const [studR,busesR,parentsR,stopsR] = await Promise.all([GET('/students'),GET('/buses'),GET('/users?role=parent'),GET('/stops')]);
+  const students=studR?.data||[], buses=busesR?.data||[], parents=parentsR?.data||[], stops=stopsR?.data||[];
+  pw(`
+  <div class="page-header"><h1>Student Management 👥</h1><p>All enrolled students</p></div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <input class="inp" id="stuQ" placeholder="🔍 Search…" style="max-width:220px" oninput="filterTbl('stuQ','stuBody')">
+    <button class="btn btn-secondary" onclick="navigate('routes')">🗺️ Enroll at Stop</button>
+    <button class="btn btn-primary" style="margin-left:auto" onclick="openAddStudentModal(${JSON.stringify(buses).replace(/"/g,'&quot;')},${JSON.stringify(parents).replace(/"/g,'&quot;')},${JSON.stringify(stops).replace(/"/g,'&quot;')})">+ Quick Enroll</button>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-hd-title">All Students</div><div class="card-hd-sub">${students.length} enrolled</div></div>
+    <div style="overflow-x:auto">
+      ${students.length===0?emptyState('👥','No Students','Go to Routes & Stops to enroll students under each stop.',`<button class="btn btn-primary" style="margin-top:12px" onclick="navigate('routes')">🗺️ Go to Routes</button>`)
+      :`<table class="tbl"><thead><tr><th>No.</th><th>Name</th><th>Class</th><th>Bus</th><th>⬆ Pickup</th><th>⬇ Dropoff</th><th>Parents</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="stuBody">
+        ${students.map(s=>`<tr data-search="${(s.full_name+s.student_number+(s.class_name||'')).toLowerCase()}">
+          <td><span style="font-family:var(--mono);font-size:11.5px">${s.student_number}</span></td>
+          <td><strong>${s.full_name}</strong></td>
+          <td>${s.class_name||'—'}</td>
+          <td>${s.bus_code?`<span class="badge b-blue">${s.bus_code}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+          <td style="font-size:12px">${s.pickup_stop_name||'—'}</td>
+          <td style="font-size:12px">${s.dropoff_stop_name||'—'}</td>
+          <td style="font-size:12px">${(s.parent_names||'').split('|').filter(Boolean).map(n=>n.trim().split(' ')[0]).join(', ')||'—'}</td>
+          <td>${s.is_active?`<span class="badge b-green">Active</span>`:`<span class="badge b-grey">Inactive</span>`}</td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-xs btn-secondary" onclick="viewStudent(${s.id})">👁</button>
+            <button class="btn btn-xs btn-danger" onclick="deactivateStudent(${s.id},'${(s.full_name||'').replace(/'/g,"\\'")}')">🗑</button>
+          </td>
+        </tr>`).join('')}
+      </tbody></table>`}
+    </div>
+  </div>`);
+}
+
+function openAddStudentModal(buses,parents,stops) {
+  openModal('Quick Enroll Student',`
+    <div class="form-row"><div class="fg"><label>Student Number *</label><input class="inp" id="ms2_no" placeholder="2024/001"></div><div class="fg"><label>Full Name *</label><input class="inp" id="ms2_name" placeholder="Full name"></div></div>
+    <div class="form-row"><div class="fg"><label>Class</label><input class="inp" id="ms2_class" placeholder="S4A"></div><div class="fg"><label>Gender</label><select class="inp" id="ms2_gender"><option value="">--</option><option value="male">Male</option><option value="female">Female</option></select></div></div>
+    <div class="form-row"><div class="fg"><label>Bus</label><select class="inp" id="ms2_bus"><option value="">--</option>${(buses||[]).map(b=>`<option value="${b.id}">${b.bus_code}</option>`).join('')}</select></div><div class="fg"><label>Pickup Stop</label><select class="inp" id="ms2_pu"><option value="">--</option>${(stops||[]).map(s=>`<option value="${s.id}">${s.stop_name}</option>`).join('')}</select></div></div>
+    <div class="fg"><label>Dropoff Stop (if different)</label><select class="inp" id="ms2_dr"><option value="">-- Same as pickup --</option>${(stops||[]).map(s=>`<option value="${s.id}">${s.stop_name}</option>`).join('')}</select></div>
+    <div class="fg"><label>Primary Parent *</label><select class="inp" id="ms2_p1"><option value="">-- Select --</option>${(parents||[]).map(p=>`<option value="${p.id}">${p.full_name} (${p.phone||p.email})</option>`).join('')}</select></div>
+    <div class="fg"><label>Second Parent (optional)</label><select class="inp" id="ms2_p2"><option value="">-- None --</option>${(parents||[]).map(p=>`<option value="${p.id}">${p.full_name}</option>`).join('')}</select></div>`,
+    `<button class="btn btn-primary" onclick="submitAddStudent()">Enroll Student</button>`);
+}
+
+async function submitAddStudent() {
+  const no=document.getElementById('ms2_no')?.value?.trim(), name=document.getElementById('ms2_name')?.value?.trim();
+  const p1=document.getElementById('ms2_p1')?.value||null, p2=document.getElementById('ms2_p2')?.value||null;
+  const pickupId=document.getElementById('ms2_pu')?.value||null, dropoffId=document.getElementById('ms2_dr')?.value||pickupId;
+  if(!no||!name){toast('Number and name required','error');return;}
+  if(!p1){toast('At least one parent required','error');return;}
+  const pids=[parseInt(p1)]; if(p2&&p2!==p1) pids.push(parseInt(p2));
+  const body={student_number:no,full_name:name,class_name:document.getElementById('ms2_class')?.value?.trim(),gender:document.getElementById('ms2_gender')?.value||null,bus_id:document.getElementById('ms2_bus')?.value?parseInt(document.getElementById('ms2_bus').value):null,pickup_stop_id:pickupId?parseInt(pickupId):null,dropoff_stop_id:dropoffId?parseInt(dropoffId):null,parent_ids:pids};
+  const r=await POST('/students',body);
+  if(!r||!r.ok){toast(r?.data?.error||'Error','error');return;}
+  toast(`✅ ${name} enrolled!`,'success'); closeModal(); pageStudents();
+}
+
+async function viewStudent(sid) {
+  const r=await GET(`/students/${sid}`); const s=r?.data;
+  if(!s){toast('Not found','error');return;}
+  openModal(`Student — ${s.full_name}`,`
+    <div>${ri('Student No.',s.student_number)}${ri('Class',s.class_name||'—')}${ri('Bus',s.bus_code||'Not assigned')}${ri('Pickup',s.pickup_stop_name?`⬆ ${s.pickup_stop_name} @ ${s.pickup_time||'TBD'}`:'—')}${ri('Dropoff',s.dropoff_stop_name?`⬇ ${s.dropoff_stop_name} @ ${s.dropoff_time||'TBD'}`:'—')}${ri('QR Code',`<code style="font-size:10px">${s.qr_code||'—'}</code>`)}${ri('Status',s.is_active?'✅ Active':'❌ Inactive')}</div>
+    ${(s.parents||[]).length>0?`<div style="margin-top:12px"><div style="font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.6px">Parents</div>
+    ${(s.parents||[]).map(p=>`<div style="background:var(--surf2);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:13px"><div style="font-weight:600">${p.full_name} <span class="badge b-grey" style="font-size:10px">${p.relationship||'parent'}</span>${p.is_primary?` <span class="badge b-green" style="font-size:10px">Primary</span>`:''}</div><div style="color:var(--muted);font-size:11.5px;margin-top:2px">📱 ${p.phone||'—'} · 📧 ${p.email||'—'}</div></div>`).join('')}</div>`:''}`);
+}
+
+async function deactivateStudent(id,name) {
+  if(!confirm(`Deactivate ${name}? Record kept permanently.`)) return;
+  await DELETE(`/students/${id}`); toast(`${name} deactivated`,'warning'); pageStudents();
+}
+
+// ════════════════════════════════════════════════════════
+//  USERS
+// ════════════════════════════════════════════════════════
+async function pageUsers(role) {
+  const r=await GET(`/users?role=${role}`); const users=r?.data||[];
+  const label=role==='driver'?'Driver':'Parent';
+  pw(`
+  <div class="page-header"><h1>${label} Management ${role==='driver'?'🚗':'👨‍👧'}</h1><p>Permanent records — only admin can deactivate</p></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="openAddUserModal('${role}')">+ Add ${label}</button>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-hd-title">${label}s</div><div class="card-hd-sub">${users.length} total</div></div>
+    <div style="overflow-x:auto">
+      ${users.length===0?emptyState(role==='driver'?'🚗':'👨‍👧',`No ${label}s Yet`,`Add your first ${label.toLowerCase()}.`,`<button class="btn btn-primary" style="margin-top:12px" onclick="openAddUserModal('${role}')">+ Add ${label}</button>`)
+      :`<table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>WhatsApp</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+      <tbody>${users.map(u=>`<tr>
+        <td><div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${(u.full_name||'U')[0]}</div><strong>${u.full_name}</strong></div></td>
+        <td style="font-size:12px">${u.email}</td><td>${u.phone||'—'}</td><td>${u.whatsapp_phone||u.phone||'—'}</td>
+        <td>${u.is_active?`<span class="badge b-green">Active</span>`:`<span class="badge b-grey">Inactive</span>`}</td>
+        <td style="font-size:11.5px;color:var(--muted)">${u.last_login?new Date(u.last_login).toLocaleDateString():'Never'}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-xs btn-secondary" onclick="openEditUserModal(${u.id},'${(u.full_name||'').replace(/'/g,"\\'")}','${u.phone||''}','${u.whatsapp_phone||''}','${role}',${u.is_active})">✏️</button>
+          <button class="btn btn-xs btn-danger" onclick="deactivateUser(${u.id},'${(u.full_name||'').replace(/'/g,"\\'")}','${role}')">🗑</button>
+        </td>
+      </tr>`).join('')}</tbody></table>`}
+    </div>
+  </div>`);
+}
+
+function openAddUserModal(role) {
+  const label=role==='driver'?'Driver':'Parent';
+  openModal(`Add New ${label}`,`
+    <div class="fg"><label>Full Name *</label><input class="inp" id="mu_name" placeholder="${label} full name"></div>
+    <div class="form-row"><div class="fg"><label>Email *</label><input class="inp" id="mu_email" type="email" placeholder="email@example.com"></div><div class="fg"><label>Phone *</label><input class="inp" id="mu_phone" placeholder="+256 XXX XXXXXX"></div></div>
+    <div class="fg"><label>WhatsApp (if different from phone)</label><input class="inp" id="mu_wa" placeholder="+256 XXX XXXXXX"></div>
+    <div class="form-row"><div class="fg"><label>Password * (min 8)</label><input class="inp" id="mu_pwd" type="password"></div><div class="fg"><label>Confirm Password</label><input class="inp" id="mu_pwd2" type="password"></div></div>`,
+    `<button class="btn btn-primary" onclick="submitAddUser('${role}')">Add ${label}</button>`);
+}
+
+async function submitAddUser(role) {
+  const name=document.getElementById('mu_name')?.value?.trim(), email=document.getElementById('mu_email')?.value?.trim();
+  const phone=document.getElementById('mu_phone')?.value?.trim(), wa=document.getElementById('mu_wa')?.value?.trim();
+  const pwd=document.getElementById('mu_pwd')?.value, pwd2=document.getElementById('mu_pwd2')?.value;
+  if(!name||!email||!pwd){toast('Name, email and password required','error');return;}
+  if(pwd!==pwd2){toast('Passwords do not match','error');return;}
+  if(pwd.length<8){toast('Password too short','error');return;}
+  const r=await POST('/users',{full_name:name,email,phone,whatsapp_phone:wa||phone,password:pwd,role});
+  if(!r||!r.ok){toast(r?.data?.error||'Error','error');return;}
+  toast(`✅ ${name} added! Welcome SMS sent.`,'success'); closeModal(); pageUsers(role);
+}
+
+function openEditUserModal(id,name,phone,wa,role,isActive) {
+  openModal(`Edit — ${name}`,`
+    <div class="fg"><label>Full Name</label><input class="inp" id="eu_name" value="${name}"></div>
+    <div class="form-row"><div class="fg"><label>Phone</label><input class="inp" id="eu_phone" value="${phone}"></div><div class="fg"><label>WhatsApp</label><input class="inp" id="eu_wa" value="${wa}"></div></div>
+    <div class="fg"><label>New Password (leave blank to keep)</label><input class="inp" id="eu_pwd" type="password"></div>
+    <div class="fg"><label>Status</label><select class="inp" id="eu_active"><option value="1" ${isActive?'selected':''}>Active</option><option value="0" ${!isActive?'selected':''}>Inactive</option></select></div>`,
+    `<button class="btn btn-primary" onclick="submitEditUser(${id},'${role}')">Save</button>`);
+}
+
+async function submitEditUser(id,role) {
+  const body={full_name:document.getElementById('eu_name')?.value?.trim(),phone:document.getElementById('eu_phone')?.value?.trim(),whatsapp_phone:document.getElementById('eu_wa')?.value?.trim(),is_active:parseInt(document.getElementById('eu_active')?.value)};
+  const pwd=document.getElementById('eu_pwd')?.value; if(pwd) body.password=pwd;
+  const r=await PUT(`/users/${id}`,body);
+  if(!r||!r.ok){toast(r?.data?.error||'Error','error');return;}
+  toast('✅ Updated!','success'); closeModal(); pageUsers(role);
+}
+
+async function deactivateUser(id,name,role) {
+  if(!confirm(`Deactivate ${name}? Record kept permanently.`)) return;
+  await DELETE(`/users/${id}`); toast(`${name} deactivated`,'warning'); pageUsers(role);
+}
+
+// ════════════════════════════════════════════════════════
+//  BUSES
+// ════════════════════════════════════════════════════════
+async function pageBuses() {
+  const [busesR,driversR,routesR]=await Promise.all([GET('/buses'),GET('/users?role=driver'),GET('/routes')]);
+  const buses=busesR?.data||[], drivers=driversR?.data||[], routes=routesR?.data||[];
+  pw(`
+  <div class="page-header"><h1>Bus Management 🚌</h1><p>Register and manage your fleet</p></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn btn-primary" onclick="openAddBusModal(${JSON.stringify(drivers).replace(/"/g,'&quot;')},${JSON.stringify(routes).replace(/"/g,'&quot;')})">+ Register Bus</button>
+  </div>
+  <div class="g-auto">
+    ${buses.length===0?`<div class="card" style="grid-column:1/-1">${emptyState('🚌','No Buses','Register your first bus.',`<button class="btn btn-primary" style="margin-top:12px" onclick="openAddBusModal([],[])">+ Register Bus</button>`)}</div>`
+    :buses.map(b=>`<div class="card">
+      <div class="card-hd"><div><div style="display:flex;align-items:center;gap:8px"><span>${b.status==='active'?'🟢':b.status==='idle'?'🟡':'⚫'}</span><strong style="font-family:var(--mono)">${b.bus_code}</strong></div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">${b.plate_number} · ${b.make_model||'—'}</div></div>
+        <span class="badge ${b.status==='active'?'b-green':b.status==='idle'?'b-warn':'b-grey'}">${b.status}</span>
+      </div>
+      <div class="card-body">
+        ${ri('Capacity',`${b.capacity} seats`)}${ri('Driver',b.driver_name||'Not assigned')}${ri('Route',b.route_name||'Not assigned')}${ri('Students',b.student_count||0)}${ri('GPS',b.gps_device_type||'phone')}
+        ${b.current_speed_kmh>0?`<div style="margin-top:8px;padding:7px 10px;background:rgba(0,217,176,.07);border-radius:7px;font-size:12px;color:var(--success)">📡 ${b.current_speed_kmh?.toFixed(0)} km/h · ${b.current_lat?.toFixed(4)||'?'}°N</div>`:''}
+      </div>
+      <div style="padding:9px 14px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-primary" onclick="openAssignModal(${b.id},'${b.bus_code}',${JSON.stringify(drivers).replace(/"/g,'&quot;')},${JSON.stringify(routes).replace(/"/g,'&quot;')})">Assign</button>
+        <button class="btn btn-xs btn-secondary" onclick="navigate('live-map')">🗺️ Track</button>
+        <button class="btn btn-xs btn-danger" onclick="deactivateBus(${b.id},'${b.bus_code}')">🗑</button>
+      </div>
+    </div>`).join('')}
+  </div>`);
+}
+
+function openAddBusModal(drivers,routes) {
+  openModal('Register New Bus',`
+    <div class="form-row"><div class="fg"><label>Bus Code *</label><input class="inp" id="mb_code" placeholder="BUS-01"></div><div class="fg"><label>Plate Number *</label><input class="inp" id="mb_plate" placeholder="UG-JAA-001"></div></div>
+    <div class="form-row"><div class="fg"><label>Make & Model</label><input class="inp" id="mb_model" placeholder="Toyota Coaster"></div><div class="fg"><label>Capacity *</label><input class="inp" id="mb_cap" type="number" placeholder="30"></div></div>
+    <div class="form-row"><div class="fg"><label>GPS Type</label><select class="inp" id="mb_gps"><option value="phone">Driver Phone GPS</option><option value="hardware">Hardware Device</option><option value="both">Both</option></select></div><div class="fg"><label>GPS Device ID</label><input class="inp" id="mb_gpsid" placeholder="Serial no. (optional)"></div></div>
+    <div class="form-row"><div class="fg"><label>Assign Driver</label><select class="inp" id="mb_driver"><option value="">-- No driver yet --</option>${(drivers||[]).map(d=>`<option value="${d.id}">${d.full_name}</option>`).join('')}</select></div><div class="fg"><label>Assign Route</label><select class="inp" id="mb_route"><option value="">-- No route yet --</option>${(routes||[]).map(r=>`<option value="${r.id}">${r.route_code} — ${r.route_name}</option>`).join('')}</select></div></div>
+    <div class="form-row"><div class="fg"><label>Insurance Expiry</label><input class="inp" id="mb_ins" type="date"></div><div class="fg"><label>Next Service</label><input class="inp" id="mb_svc" type="date"></div></div>`,
+    `<button class="btn btn-primary" onclick="submitAddBus()">Register Bus</button>`);
+}
+
+async function submitAddBus() {
+  const body={bus_code:document.getElementById('mb_code')?.value?.trim()?.toUpperCase(),plate_number:document.getElementById('mb_plate')?.value?.trim()?.toUpperCase(),make_model:document.getElementById('mb_model')?.value?.trim(),capacity:parseInt(document.getElementById('mb_cap')?.value),gps_device_type:document.getElementById('mb_gps')?.value,gps_device_id:document.getElementById('mb_gpsid')?.value?.trim(),assigned_driver:document.getElementById('mb_driver')?.value||null,route_id:document.getElementById('mb_route')?.value||null,insurance_expiry:document.getElementById('mb_ins')?.value||null,next_service:document.getElementById('mb_svc')?.value||null};
+  if(!body.bus_code||!body.plate_number||!body.capacity){toast('Bus code, plate and capacity required','error');return;}
+  const r=await POST('/buses',body);
+  if(!r||!r.ok){toast(r?.data?.error||'Error','error');return;}
+  toast(`✅ ${body.bus_code} registered!`,'success'); closeModal(); pageBuses();
+}
+
+function openAssignModal(busId,busCode,drivers,routes) {
+  openModal(`Assign — ${busCode}`,`
+    <div class="fg"><label>Assign Driver</label><select class="inp" id="as_drv"><option value="">-- Select --</option>${(drivers||[]).map(d=>`<option value="${d.id}">${d.full_name} (${d.phone||'no phone'})</option>`).join('')}</select></div>
+    <div class="fg"><label>Assign Route</label><select class="inp" id="as_rt"><option value="">-- Select --</option>${(routes||[]).map(r=>`<option value="${r.id}">${r.route_code} — ${r.route_name}</option>`).join('')}</select></div>`,
+    `<button class="btn btn-primary" onclick="submitAssign(${busId})">Assign</button>`);
+}
+
+async function submitAssign(busId) {
+  const body={driver_id:document.getElementById('as_drv')?.value||null,route_id:document.getElementById('as_rt')?.value||null};
+  const r=await POST(`/buses/${busId}/assign`,body);
+  if(!r||!r.ok){toast('Error','error');return;}
+  toast('✅ Assigned!','success'); closeModal(); pageBuses();
+}
+
+async function deactivateBus(id,code) {
+  if(!confirm(`Deactivate ${code}?`)) return;
+  await DELETE(`/buses/${id}`); toast(`${code} deactivated`,'warning'); pageBuses();
+}
+
+// ════════════════════════════════════════════════════════
+//  TRIPS
+// ════════════════════════════════════════════════════════
+async function pageTrips() {
+  const [tripsR,busesR,routesR]=await Promise.all([GET('/trips'),GET('/buses'),GET('/routes')]);
+  const trips=tripsR?.data||[], buses=busesR?.data||[], routes=routesR?.data||[];
+  const active=trips.filter(t=>t.status==='active');
+  pw(`
+  <div class="page-header"><h1>Trips 🛣️</h1></div>
+  ${active.length>0?`<div class="alert-bar ab-info">🚌 ${active.length} trip${active.length>1?'s are':' is'} active</div>`:''}
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">
+    <button class="btn btn-primary" onclick="openCreateTripModal(${JSON.stringify(buses).replace(/"/g,'&quot;')},${JSON.stringify(routes).replace(/"/g,'&quot;')})">+ Create Trip</button>
+  </div>
+  <div class="card"><div style="overflow-x:auto">
+    ${trips.length===0?emptyState('🛣️','No Trips Yet','Create a trip to start tracking.')
+    :`<table class="tbl"><thead><tr><th>Code</th><th>Bus</th><th>Route</th><th>Driver</th><th>Type</th><th>Students</th><th>Started</th><th>Status</th></tr></thead>
+    <tbody>${trips.map(t=>`<tr>
+      <td><span style="font-family:var(--mono);font-size:11px">${t.trip_code}</span></td>
+      <td><span class="badge b-blue">${t.bus_code||t.bus_id}</span></td>
+      <td style="font-size:12.5px">${t.route_name||'—'}</td><td style="font-size:12.5px">${t.driver_name||'—'}</td>
+      <td>${t.trip_type}</td><td>${t.total_students}</td>
+      <td style="font-size:11.5px;color:var(--muted)">${t.started_at?new Date(t.started_at).toLocaleString():'Not started'}</td>
+      <td><span class="badge ${t.status==='active'?'b-green':t.status==='completed'?'b-blue':t.status==='pending'?'b-warn':'b-grey'}">${t.status}</span></td>
+    </tr>`).join('')}</tbody></table>`}
+  </div></div>`);
+}
+
+function openCreateTripModal(buses,routes) {
+  openModal('Create New Trip',`
+    <div class="fg"><label>Bus *</label><select class="inp" id="ct_bus"><option value="">-- Select bus --</option>${(buses||[]).map(b=>`<option value="${b.id}|${b.assigned_driver||''}">${b.bus_code} — ${b.driver_name||'no driver'}</option>`).join('')}</select></div>
+    <div class="fg"><label>Route *</label><select class="inp" id="ct_route"><option value="">-- Select route --</option>${(routes||[]).map(r=>`<option value="${r.id}">${r.route_code} — ${r.route_name}</option>`).join('')}</select></div>
+    <div class="fg"><label>Trip Type</label><select class="inp" id="ct_type"><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="special">Special</option></select></div>`,
+    `<button class="btn btn-primary" onclick="submitCreateTrip()">Create Trip</button>`);
+}
+
+async function submitCreateTrip() {
+  const busVal=document.getElementById('ct_bus')?.value, routeId=document.getElementById('ct_route')?.value;
+  if(!busVal||!routeId){toast('Bus and route required','error');return;}
+  const [busId,driverId]=busVal.split('|');
+  const r=await POST('/trips',{bus_id:parseInt(busId),route_id:parseInt(routeId),driver_id:parseInt(driverId||USER.id),trip_type:document.getElementById('ct_type')?.value});
+  if(!r||!r.ok){toast(r?.data?.error||'Error','error');return;}
+  toast('✅ Trip created!','success'); closeModal(); pageTrips();
+}
+
+// ════════════════════════════════════════════════════════
+//  ALERTS
+// ════════════════════════════════════════════════════════
+async function pageAlerts() {
+  const [aR,sosR]=await Promise.all([GET('/alerts'),GET('/sos/active')]);
+  const alerts=aR?.data||[], sos=sosR?.data||[];
+  const unresolved=alerts.filter(a=>!a.is_resolved);
+  pw(`
+  <div class="page-header"><h1>Alerts & SOS 🚨</h1></div>
+  ${sos.length>0?`<div class="alert-bar ab-sos">🚨 <strong>${sos.length} ACTIVE SOS!</strong>
+    ${sos.map(s=>`<span> · ${s.driver_name||'Driver'} (${s.bus_code||'?'}) <button class="btn btn-xs btn-success" onclick="resolveSOS(${s.id})" style="margin-left:4px">✓ Resolve</button></span>`).join('')}
+  </div>`:''}
+  ${unresolved.length>0?`<div class="alert-bar ab-warn">⚠️ ${unresolved.length} unresolved alert${unresolved.length>1?'s':''}</div>`:''}
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">
+    <button class="btn btn-primary" onclick="openCreateAlertModal()">+ Create Alert</button>
+  </div>
+  <div class="card"><div style="overflow-x:auto">
+    ${alerts.length===0?emptyState('✅','All Clear','No alerts.')
+    :`<table class="tbl"><thead><tr><th>Type</th><th>Severity</th><th>Bus</th><th>Title</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>${alerts.map(a=>`<tr>
+      <td style="font-size:12px">${(a.alert_type||'').replace(/_/g,' ')}</td>
+      <td><span class="badge ${a.severity==='critical'||a.severity==='high'?'b-red':a.severity==='medium'?'b-warn':'b-green'}">${a.severity}</span></td>
+      <td>${a.bus_code||'—'}</td>
+      <td><strong style="font-size:13px">${a.title}</strong></td>
+      <td style="font-size:11.5px;color:var(--muted)">${timeAgo(a.created_at)}</td>
+      <td>${a.is_resolved?`<span class="badge b-green">Resolved</span>`:`<span class="badge b-red">Open</span>`}</td>
+      <td>${!a.is_resolved?`<button class="btn btn-xs btn-success" onclick="resolveAlert(${a.id})">✓</button>`:'—'}</td>
+    </tr>`).join('')}</tbody></table>`}
+  </div></div>`);
+}
+
+function openCreateAlertModal() {
+  openModal('Create Alert',`
+    <div class="form-row"><div class="fg"><label>Type</label><select class="inp" id="ca_type"><option value="custom">Custom</option><option value="sos_emergency">SOS Emergency</option><option value="route_deviation">Route Deviation</option><option value="speed_violation">Speed Violation</option><option value="bus_breakdown">Bus Breakdown</option></select></div>
+    <div class="fg"><label>Severity</label><select class="inp" id="ca_sev"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div></div>
+    <div class="fg"><label>Title *</label><input class="inp" id="ca_title" placeholder="Alert title"></div>
+    <div class="fg"><label>Message *</label><textarea class="inp" id="ca_msg" placeholder="Details…"></textarea></div>`,
+    `<button class="btn btn-primary" onclick="submitAlert()">Create Alert</button>`);
+}
+
+async function submitAlert() {
+  const body={alert_type:document.getElementById('ca_type')?.value,severity:document.getElementById('ca_sev')?.value,title:document.getElementById('ca_title')?.value?.trim(),message:document.getElementById('ca_msg')?.value?.trim()};
+  if(!body.title||!body.message){toast('Title and message required','error');return;}
+  const r=await POST('/alerts',body);
+  if(!r||!r.ok){toast('Error','error');return;}
+  toast('✅ Alert created!','success'); closeModal(); pageAlerts();
+}
+
+async function resolveAlert(id) { await POST('/alerts/resolve',{alert_id:id}); toast('Alert resolved','success'); pageAlerts(); }
+async function resolveSOS(id)   { await POST('/sos/resolve',{sos_id:id}); toast('SOS resolved','success'); pageAlerts(); }
+
+// ════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ════════════════════════════════════════════════════════
+async function pageNotifications() {
+  const r=await GET('/notifications'); const notifs=r?.data||[];
+  pw(`
+  <div class="page-header"><h1>Notifications 🔔</h1></div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-secondary btn-sm" onclick="markAllRead()">✓ Mark All Read</button>
+    ${USER.role==='admin'?`<button class="btn btn-primary btn-sm" onclick="openSendNotifModal()">📩 Send Notification</button>`:''}
+  </div>
+  ${notifs.length===0?emptyState('🔔','No Notifications','Nothing yet.')
+  :notifs.map(n=>`<div class="notif-item ${!n.is_read?'unread':''}" onclick="markRead(${n.id},this)">
+    <div style="font-size:20px;flex-shrink:0">${n.title?.includes('SOS')?'🚨':n.title?.includes('Approach')||n.title?.includes('Notify')?'📣':n.title?.includes('Boarded')?'✅':'🔔'}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13.5px;font-weight:600;margin-bottom:3px">${n.title}${!n.is_read?'<span class="unread-dot"></span>':''}</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5">${n.message}</div>
+      <div style="font-size:11px;color:var(--faint);margin-top:5px;font-family:var(--mono)">${timeAgo(n.sent_at)} · ${(n.channel||'in_app').toUpperCase()}</div>
+    </div>
+  </div>`).join('')}`);
+}
+
+async function markRead(id,el) { el?.closest('.notif-item')?.classList.remove('unread'); await POST('/notifications/read',{notification_id:id}); }
+async function markAllRead()   { await POST('/notifications/read',{}); toast('All read','success'); pageNotifications(); }
+
+function openSendNotifModal() {
+  openModal('Send Notification',`
+    <div class="fg"><label>Send To</label><select class="inp" id="sn_target"><option value="all">Everyone</option><option value="parent">All Parents</option><option value="driver">All Drivers</option><option value="admin">Admins Only</option></select></div>
+    <div class="fg"><label>Channels</label>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:5px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ch_ia" checked> In-App</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ch_sms" checked> SMS</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ch_em" checked> Email</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ch_wa" checked> WhatsApp</label>
+      </div>
+    </div>
+    <div class="fg"><label>Title *</label><input class="inp" id="sn_title" placeholder="Notification title"></div>
+    <div class="fg"><label>Message *</label><textarea class="inp" id="sn_msg" placeholder="Write your message…" rows="3"></textarea></div>`,
+    `<button class="btn btn-primary" onclick="submitSendNotif()">Send Now 📩</button>`);
+}
+
+async function submitSendNotif() {
+  const channels=[];
+  if(document.getElementById('ch_ia')?.checked)  channels.push('in_app');
+  if(document.getElementById('ch_sms')?.checked) channels.push('sms');
+  if(document.getElementById('ch_em')?.checked)  channels.push('email');
+  if(document.getElementById('ch_wa')?.checked)  channels.push('whatsapp');
+  const body={role_target:document.getElementById('sn_target')?.value,title:document.getElementById('sn_title')?.value?.trim(),message:document.getElementById('sn_msg')?.value?.trim(),channels};
+  if(!body.title||!body.message){toast('Title and message required','error');return;}
+  const r=await POST('/notifications/send',body);
+  if(!r||!r.ok){toast('Error','error');return;}
+  toast('✅ Sent!','success'); closeModal(); pageNotifications();
+}
+
+// ════════════════════════════════════════════════════════
+//  REPORTS
+// ════════════════════════════════════════════════════════
+async function pageReports() {
+  const [rR,sR]=await Promise.all([GET('/reports/summary'),GET('/dashboard/stats')]);
+  const rep=rR?.data||{};
+  pw(`
+  <div class="page-header"><h1>Analytics & Reports 📈</h1></div>
+  <div class="stats-grid" style="margin-bottom:22px">
+    <div class="stat"><div class="stat-val">${rep.trips_this_month||0}</div><div class="stat-lbl">Trips This Month</div><span class="stat-icon">🗓️</span></div>
+    <div class="stat c-green"><div class="stat-val">${rep.completed_trips||0}</div><div class="stat-lbl">Completed Trips</div><span class="stat-icon">✅</span></div>
+    <div class="stat c-blue"><div class="stat-val">${rep.stop_notifications||0}</div><div class="stat-lbl">Stop Alerts</div><span class="stat-icon">📣</span></div>
+    <div class="stat c-warn"><div class="stat-val">${rep.speed_violations||0}</div><div class="stat-lbl">Speed Violations</div><span class="stat-icon">⚡</span></div>
+    <div class="stat c-red"><div class="stat-val">${rep.sos_total||0}</div><div class="stat-lbl">SOS Alerts</div><span class="stat-icon">🚨</span></div>
+    <div class="stat"><div class="stat-val">${rep.geofence_breaches||0}</div><div class="stat-lbl">Geofence Events</div><span class="stat-icon">🗺️</span></div>
+    <div class="stat"><div class="stat-val">${rep.offline_gps_synced||0}</div><div class="stat-lbl">Offline GPS Synced</div><span class="stat-icon">📶</span></div>
+    <div class="stat"><div class="stat-val">${rep.qr_boardings||0}</div><div class="stat-lbl">QR Boardings</div><span class="stat-icon">📷</span></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><div class="card-hd-title">📊 Alerts by Type</div></div><div class="card-body">
+      ${(rep.alerts_by_type||[]).length===0?`<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">No alerts yet</div>`
+      :(rep.alerts_by_type||[]).map(a=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px"><span>${(a.alert_type||'').replace(/_/g,' ')}</span><span style="font-family:var(--mono);color:var(--muted)">${a.count}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(100,(a.count/Math.max(...(rep.alerts_by_type||[]).map(x=>x.count),1)*100)).toFixed(0)}%;background:var(--accent)"></div></div></div>`).join('')}
+    </div></div>
+    <div class="card"><div class="card-hd"><div class="card-hd-title">📍 Stops by Students</div></div><div class="card-body">
+      ${(rep.stops_by_students||[]).length===0?`<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">No stop data yet</div>`
+      :(rep.stops_by_students||[]).map(b=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:12.5px;min-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.stop_name}</span><div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${Math.min(100,((b.pickup_students+b.dropoff_students)/Math.max(...(rep.stops_by_students||[]).map(x=>x.pickup_students+x.dropoff_students),1)*100)).toFixed(0)}%;background:var(--accent2)"></div></div><span style="font-family:var(--mono);font-size:11px">⬆${b.pickup_students} ⬇${b.dropoff_students}</span></div>`).join('')}
+    </div></div>
+  </div>`);
+}
+
+// ════════════════════════════════════════════════════════
+//  AUDIT
+// ════════════════════════════════════════════════════════
+async function pageAudit() {
+  const r=await GET('/audit'); const logs=r?.data||[];
+  pw(`
+  <div class="page-header"><h1>Audit Log 📋</h1><p>Every admin action recorded permanently</p></div>
+  <div class="card"><div style="overflow-x:auto">
+    ${logs.length===0?emptyState('📋','No Records','Actions will appear here.')
+    :`<table class="tbl"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead>
+    <tbody>${logs.map(l=>`<tr>
+      <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${new Date(l.created_at).toLocaleString()}</td>
+      <td><strong>${l.full_name||'System'}</strong><br><span style="font-size:11px;color:var(--muted)">${l.email||''}</span></td>
+      <td><span class="badge b-blue">${l.action}</span></td>
+      <td>${l.entity_type?`${l.entity_type} #${l.entity_id||''}`:''}</td>
+    </tr>`).join('')}</tbody></table>`}
+  </div></div>`);
+}
+
+// ════════════════════════════════════════════════════════
+//  SETTINGS
+// ════════════════════════════════════════════════════════
+async function pageSettings() {
+  const r=await GET('/settings'); const s=r?.data||{};
+  pw(`
+  <div class="page-header"><h1>Settings ⚙️</h1></div>
+  <div class="g2">
+    <div class="card"><div class="card-hd"><div class="card-hd-title">🏫 School Info</div></div><div class="card-body">
+      <div class="fg"><label>School Name</label><input class="inp" id="set_school_name" value="${s.school_name||''}"></div>
+      <div class="fg"><label>Address</label><input class="inp" id="set_school_address" value="${s.school_address||''}"></div>
+      <div class="form-row"><div class="fg"><label>Phone</label><input class="inp" id="set_school_phone" value="${s.school_phone||''}"></div><div class="fg"><label>Academic Year</label><input class="inp" id="set_academic_year" value="${s.academic_year||'2026'}"></div></div>
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button>
+    </div></div>
+    <div class="card"><div class="card-hd"><div class="card-hd-title">⚙️ GPS & Safety</div></div><div class="card-body">
+      <div class="form-row"><div class="fg"><label>Speed Limit (km/h)</label><input class="inp" id="set_speed_limit_kmh" type="number" value="${s.speed_limit_kmh||60}"></div><div class="fg"><label>Geofence Radius (m)</label><input class="inp" id="set_geofence_radius_m" type="number" value="${s.geofence_radius_m||200}"></div></div>
+      <div class="form-row"><div class="fg"><label>GPS Interval (sec)</label><input class="inp" id="set_gps_interval_sec" type="number" value="${s.gps_interval_sec||5}"></div><div class="fg"><label>Notify Before Stop (min)</label><input class="inp" id="set_notify_stop_minutes" type="number" value="${s.notify_stop_minutes||2}"></div></div>
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button>
+    </div></div>
+  </div>
+  <div class="card"><div class="card-hd"><div class="card-hd-title">🔔 Notification Status</div></div><div class="card-body">
+    ${[['📱 Africa\'s Talking SMS','sms_ready'],['📧 Gmail Email','email_ready'],['💬 Twilio WhatsApp','whatsapp_ready']].map(([lbl,key])=>
+    `<div class="row-item"><span>${lbl}</span><span class="badge ${s._notifications?.[key]?'b-green':'b-red'}">${s._notifications?.[key]?'✓ Ready':'✗ Not configured'}</span></div>`).join('')}
+    <div class="row-item"><span>📶 Offline GPS</span><span class="badge b-green">✓ Active</span></div>
+    <div class="row-item"><span>🗺️ Geofence Alerts</span><span class="badge b-green">✓ Active</span></div>
+    <div class="row-item"><span>📡 ETA Calculation</span><span class="badge b-green">✓ Active</span></div>
+    <div class="row-item"><span>📱 PWA (Install as App)</span><span class="badge b-green">✓ Active</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px">To configure SMS/Email/WhatsApp, open server.py in Notepad and fill in the credentials.</p>
+  </div></div>`);
+}
+
+async function saveSettings() {
+  const keys=['school_name','school_address','school_phone','academic_year','speed_limit_kmh','geofence_radius_m','gps_interval_sec','notify_stop_minutes'];
+  const body={}; keys.forEach(k=>{const el=document.getElementById('set_'+k);if(el)body[k]=el.value;});
+  const r=await POST('/settings',body);
+  if(!r||!r.ok){toast('Error saving','error');return;}
+  if(body.school_name){SCHOOL=body.school_name;localStorage.setItem('bt_school',SCHOOL);document.getElementById('sbSchool').textContent=SCHOOL;}
+  toast('✅ Settings saved!','success');
+}
+
+// ════════════════════════════════════════════════════════
+//  DRIVER HOME
+// ════════════════════════════════════════════════════════
+async function pageDriverHome() {
+  const [tripsR,busesR]=await Promise.all([GET('/trips'),GET('/buses')]);
+  const trips=tripsR?.data||[], buses=busesR?.data||[];
+  const myTrips=trips.filter(t=>String(t.driver_id)===String(USER.id));
+  const activeTrip=myTrips.find(t=>t.status==='active');
+  const myBus=buses.find(b=>String(b.assigned_driver)===String(USER.id)||b.driver_name===USER.full_name);
+  pw(`
+  <div class="page-header"><h1>Driver Dashboard 🚗</h1><p>Welcome, ${USER.full_name.split(' ')[0]}!</p></div>
+  <div class="g2" style="margin-bottom:14px">
+    <div>
+      <div class="trip-hero">
+        <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:6px">${activeTrip?'TRIP IN PROGRESS':'Ready to Start'}</div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:4px">${myBus?myBus.bus_code:'No bus assigned'}</div>
+        <div style="font-size:13px;color:var(--accent2);margin-bottom:18px">${myBus?myBus.route_name||'No route assigned':'Contact admin to assign a bus'}</div>
+        ${myBus?`
+          <button class="btn-trip ${activeTrip?'btn-end':'btn-start'}" onclick="${activeTrip?`endMyTrip(${activeTrip.id})`:`startMyTrip(${myBus.id})`}">
+            ${activeTrip?'🛑 END TRIP':'▶ START TRIP'}
+          </button>
+          <button class="btn-sos" onclick="triggerSOS()">🚨 SOS EMERGENCY</button>`
+        :`<div style="color:rgba(255,255,255,.5);font-size:13px;padding:16px 0">No bus assigned. Contact admin.</div>`}
+      </div>
+      <div class="g3">
+        <div class="stat c-green" style="text-align:center"><div class="stat-val" style="font-size:18px">${activeTrip?'ON':'OFF'}</div><div class="stat-lbl">Status</div></div>
+        <div class="stat c-blue" style="text-align:center"><div class="stat-val" style="font-size:18px">${myBus?.student_count||0}</div><div class="stat-lbl">Students</div></div>
+        <div class="stat" style="text-align:center"><div class="stat-val" style="font-size:18px">${myTrips.filter(t=>t.status==='completed').length}</div><div class="stat-lbl">Done</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-title">📋 Recent Trips</div></div>
+      <div style="padding:8px 14px">
+        ${myTrips.slice(0,6).length===0?`<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">No trips yet</div>`
+        :myTrips.slice(0,6).map(t=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px">${t.status==='completed'?'✅':t.status==='active'?'🔄':'⏳'}</span>
+          <div style="flex:1"><div style="font-size:12.5px;font-weight:600;font-family:var(--mono)">${t.trip_code}</div>
+          <div style="font-size:11px;color:var(--muted)">${t.trip_type} · ${t.total_students} students</div></div>
+          <span class="badge ${t.status==='active'?'b-green':t.status==='completed'?'b-blue':'b-grey'}">${t.status}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`);
+}
+
+async function startMyTrip(busId) {
+  navigator.geolocation?.getCurrentPosition(async pos => {
+    const br=await GET(`/buses/${busId}`); const bus=br?.data;
+    if(!bus){toast('Bus not found','error');return;}
+    const rr=await GET('/routes'); const routes=rr?.data||[];
+    const route=routes.find(r=>r.route_name===bus.route_name||r.route_code===bus.route_code);
+    if(!route){toast('No route found for this bus — ask admin to assign a route','warning');return;}
+    const cr=await POST('/trips',{bus_id:busId,route_id:route.id,driver_id:USER.id,trip_type:'morning'});
+    if(!cr||!cr.ok){toast(cr?.data?.error||'Error','error');return;}
+    const sr=await POST('/trips/start',{trip_id:cr.data.id,latitude:pos.coords.latitude,longitude:pos.coords.longitude});
+    if(!sr||!sr.ok){toast('Could not start trip','error');return;}
+    startGPS(busId,cr.data.id);
+    toast('🚌 Trip started! Parents notified via SMS.','success');
+    pageDriverHome();
+  }, async () => {
+    const br=await GET(`/buses/${busId}`); const bus=br?.data;
+    const rr=await GET('/routes'); const routes=rr?.data||[];
+    const route=routes.find(r=>r.route_name===bus?.route_name);
+    if(!route){toast('No route — ask admin to assign','warning');return;}
+    const cr=await POST('/trips',{bus_id:busId,route_id:route.id,driver_id:USER.id,trip_type:'morning'});
+    if(!cr||!cr.ok){toast(cr?.data?.error||'Error','error');return;}
+    await POST('/trips/start',{trip_id:cr.data.id});
+    toast('🚌 Trip started (GPS not available)','success');
+    pageDriverHome();
+  });
+}
+
+async function endMyTrip(tripId) {
+  if(!confirm('End this trip?')) return;
+  stopGPS();
+  const r=await POST('/trips/end',{trip_id:tripId});
+  if(!r||!r.ok){toast('Error','error');return;}
+  toast('🏁 Trip completed! Parents notified.','success');
+  pageDriverHome();
+}
+
+// ════════════════════════════════════════════════════════
+//  DRIVER MANIFEST
+// ════════════════════════════════════════════════════════
+async function pageDriverManifest() {
+  const [studR,tripsR]=await Promise.all([GET('/students'),GET('/trips')]);
+  const students=studR?.data||[], trips=tripsR?.data||[];
+  const activeTrip=trips.find(t=>String(t.driver_id)===String(USER.id)&&t.status==='active');
+  const boardingMap={};
+  if(activeTrip){const br=await GET(`/trips/${activeTrip.id}/boarding`);(br?.data||[]).forEach(b=>boardingMap[b.student_id]=b.action);}
+  pw(`
+  <div class="page-header"><h1>Student Manifest 👥</h1><p>${activeTrip?`Trip: ${activeTrip.trip_code}`:'Start a trip from your dashboard first'}</p></div>
+  ${!activeTrip?`<div class="alert-bar ab-warn">⚠️ No active trip. Go to dashboard and start a trip first.</div>`:''}
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <span style="font-size:13px;color:var(--muted);align-self:center">${Object.values(boardingMap).filter(v=>v==='boarded').length}/${students.length} boarded</span>
+  </div>
+  <div class="card"><div class="card-body" style="padding:8px">
+    ${students.length===0?emptyState('👥','No Students','No students assigned to your bus.')
+    :students.map(s=>`<div class="manifest-row">
+      <div class="mcheck ${boardingMap[s.id]==='boarded'?'on':''}" id="mc-${s.id}"
+        onclick="${activeTrip?`toggleBoard(${s.id},${activeTrip.id},this)`:`toast('Start a trip first','warning')`}">
+        ${boardingMap[s.id]==='boarded'?'✓':''}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${s.full_name} <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${s.class_name||''}</span></div>
+        <div style="font-size:11.5px;color:var(--muted)">⬆ ${s.pickup_stop_name||'No stop'}</div>
+      </div>
+      <span class="badge ${boardingMap[s.id]==='boarded'?'b-green':boardingMap[s.id]==='absent'?'b-red':'b-grey'}">${boardingMap[s.id]||'waiting'}</span>
+    </div>`).join('')}
+  </div></div>`);
+}
+
+async function toggleBoard(studentId,tripId,el) {
+  const isOn=el.classList.contains('on');
+  const r=await POST('/boarding',{trip_id:tripId,student_id:studentId,action:isOn?'absent':'boarded'});
+  if(!r||!r.ok){toast('Error','error');return;}
+  el.classList.toggle('on',!isOn); el.textContent=isOn?'':'✓';
+  toast(isOn?'Unmarked':'✅ Boarded — parent notified!','success');
+}
+
+// ════════════════════════════════════════════════════════
+//  DRIVER GPS STATUS
+// ════════════════════════════════════════════════════════
+async function pageDriverGPS() {
+  pw(`
+  <div class="page-header"><h1>GPS Status 📡</h1></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hd"><div class="card-hd-title">Live GPS Data</div></div>
+    <div class="card-body">
+      <div class="row-item"><span class="row-label">GPS Status</span><span id="gstat" class="badge b-grey">Getting location…</span></div>
+      <div class="row-item"><span class="row-label">Latitude</span><span id="glat" style="font-family:var(--mono);font-size:13px">—</span></div>
+      <div class="row-item"><span class="row-label">Longitude</span><span id="glng" style="font-family:var(--mono);font-size:13px">—</span></div>
+      <div class="row-item"><span class="row-label">Speed</span><span id="gspd" style="font-family:var(--mono);font-size:13px">—</span></div>
+      <div class="row-item"><span class="row-label">Accuracy</span><span id="gacc" style="font-family:var(--mono);font-size:13px">—</span></div>
+      <div class="row-item"><span class="row-label">Network</span><span id="gnet" class="badge ${isOnline?'b-green':'b-red'}">${isOnline?'Online':'Offline'}</span></div>
+      <div class="row-item"><span class="row-label">Offline Queue</span><span id="gque" style="font-family:var(--mono);font-size:13px">${offlineQueue.length} points</span></div>
+      <div class="row-item"><span class="row-label">Last Update</span><span id="gtim" style="font-size:12px;color:var(--muted)">—</span></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="testGPS()">📍 Test GPS</button>
+    <button class="btn btn-secondary" onclick="syncOfflineGPS()">📶 Sync Offline</button>
+  </div>`);
+  navigator.geolocation?.watchPosition(pos=>{
+    const g=id=>document.getElementById(id);
+    if(!g('glat')) return;
+    g('gstat').textContent='✓ Active'; g('gstat').className='badge b-green';
+    g('glat').textContent=pos.coords.latitude.toFixed(6)+'°N';
+    g('glng').textContent=pos.coords.longitude.toFixed(6)+'°E';
+    g('gspd').textContent=pos.coords.speed?(pos.coords.speed*3.6).toFixed(1)+' km/h':'0 km/h';
+    g('gacc').textContent=pos.coords.accuracy?pos.coords.accuracy.toFixed(0)+'m':'—';
+    g('gnet').textContent=isOnline?'Online':'Offline'; g('gnet').className='badge '+(isOnline?'b-green':'b-red');
+    g('gque').textContent=offlineQueue.length+' points';
+    g('gtim').textContent=new Date().toLocaleTimeString();
+  }, err=>{const el=document.getElementById('gstat');if(el){el.textContent='✗ '+err.message;el.className='badge b-red';}},{enableHighAccuracy:true,timeout:15000});
+}
+
+function testGPS() {
+  navigator.geolocation?.getCurrentPosition(pos=>toast(`📍 ${pos.coords.latitude.toFixed(5)}°N, ${pos.coords.longitude.toFixed(5)}°E — Accuracy: ${pos.coords.accuracy?.toFixed(0)}m`,'success'),err=>toast('GPS error: '+err.message,'error'),{enableHighAccuracy:true,timeout:15000});
+}
+
+// ════════════════════════════════════════════════════════
+//  PARENT HOME
+// ════════════════════════════════════════════════════════
+async function pageParentHome() {
+  const [studR,activeR]=await Promise.all([GET('/students'),GET('/trips/active')]);
+  const students=studR?.data||[], activeTrips=activeR?.data||[];
+  pw(`
+  <div class="page-header"><h1>Hi, ${USER.full_name.split(' ')[0]} 👋</h1><p>Track your child's bus in real time</p></div>
+  ${students.length===0?emptyState('👦','No Students Linked','Contact the school to link your children.')
+  :students.map(s=>{
+    const trip=activeTrips.find(t=>t.bus_code===s.bus_code);
+    return `<div class="parent-hero" style="margin-bottom:14px">
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">👦 ${s.full_name}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:2px">${s.class_name||''} · ${s.bus_code?`Bus ${s.bus_code}`:'No bus assigned'}</div>
+      <div class="ph-stats">
+        <div class="ph-stat"><div class="ph-stat-val">⬆ ${s.pickup_stop_name||'—'}</div><div class="ph-stat-lbl">Pickup</div></div>
+        <div class="ph-stat"><div class="ph-stat-val">${s.pickup_time||'—'}</div><div class="ph-stat-lbl">Time</div></div>
+        <div class="ph-stat"><div class="ph-stat-val">${trip?'🟢 Active':'⚫ No Trip'}</div><div class="ph-stat-lbl">Bus Status</div></div>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="card"><div class="card-hd"><div class="card-hd-title">ℹ️ Details</div></div><div class="card-body">
+        ${ri('Bus',s.bus_code||'Not assigned')}${ri('Route',s.route_name||'—')}${ri('Pickup',s.pickup_stop_name?`⬆ ${s.pickup_stop_name} @ ${s.pickup_time||'TBD'}`:'—')}${ri('Dropoff',s.dropoff_stop_name?`⬇ ${s.dropoff_stop_name} @ ${s.dropoff_time||'TBD'}`:'—')}
+        <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="navigate('live-map')">🗺️ Track Live</button>
+          <button class="btn btn-secondary btn-sm" onclick="navigate('parent-eta')">⏱️ Check ETA</button>
+        </div>
+      </div></div>
+      <div class="card"><div class="card-hd"><div class="card-hd-title">${trip?'🟢 Bus Active':'⚫ Bus Idle'}</div></div><div class="card-body">
+        ${trip?`${ri('Bus',trip.bus_code)}${ri('Speed',`${trip.current_speed_kmh?.toFixed(0)||0} km/h`)}${ri('Students',trip.boarded_count||0)}<button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="navigate('live-map')">🗺️ Open Live Map</button>`
+        :`<div style="text-align:center;padding:18px;color:var(--muted);font-size:13px">No active trip right now.</div>`}
+      </div></div>
+    </div>`;
+  }).join('')}`);
+}
+
+// ════════════════════════════════════════════════════════
+//  PARENT ETA
+// ════════════════════════════════════════════════════════
+async function pageParentETA() {
+  const [studR,activeR]=await Promise.all([GET('/students'),GET('/trips/active')]);
+  const students=studR?.data||[], trips=activeR?.data||[];
+  const codes=students.map(s=>s.bus_code).filter(Boolean);
+  const myTrip=trips.find(t=>codes.includes(t.bus_code));
+  pw(`
+  <div class="page-header"><h1>Bus ETA ⏱️</h1><p>Estimated arrival at your stop</p></div>
+  ${!myTrip?`<div class="alert-bar ab-info">ℹ️ No active trip for your child's bus right now.</div>`
+  :`<div class="card" style="margin-bottom:14px"><div class="card-hd"><div class="card-hd-title">🚌 ${myTrip.bus_code} — ${myTrip.route_name}</div><span class="badge b-green">Active</span></div>
+    <div class="card-body">${ri('Driver',myTrip.driver_name||'—')}${ri('Speed',`${myTrip.current_speed_kmh?.toFixed(0)||0} km/h`)}${ri('Students',myTrip.boarded_count||0)}</div>
+  </div>
+  <div class="card" id="etaCard"><div class="card-hd"><div class="card-hd-title">📍 Stop ETAs</div><button class="btn btn-xs btn-secondary" onclick="pageParentETA()">↻ Refresh</button></div><div class="card-body" id="etaBody"><div style="color:var(--muted);font-size:13px">Loading…</div></div></div>`}`);
+  if(myTrip){
+    const er=await GET(`/trips/${myTrip.id}/stops`); const stops=er?.data||[];
+    const el=document.getElementById('etaBody');
+    if(el) el.innerHTML=stops.length===0?'<div style="color:var(--muted);font-size:13px">No stop data yet</div>'
+      :stops.map(s=>`<div class="eta-row">
+        <div class="eta-num">${s.stop_order}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.stop_name}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.status}${s.arrived_at?` · arrived ${timeAgo(s.arrived_at)}`:''}</div></div>
+        <div class="eta-val ${s.eta_minutes&&s.eta_minutes<2?'arriving':''}">${s.status==='arrived'?'✅':s.eta_minutes?'~'+Math.round(s.eta_minutes)+'m':'—'}</div>
+      </div>`).join('');
+    setTimeout(()=>{if(currentPage==='parent-eta')pageParentETA();},30000);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  MODAL + TOAST + UTILS
+// ════════════════════════════════════════════════════════
+function openModal(title, body, actions='') {
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=body;
+  document.getElementById('modalFt').innerHTML=`<button class="btn btn-secondary btn-sm" onclick="closeModal()">Close</button>${actions}`;
+  document.getElementById('modalBack').classList.add('open');
+}
+function closeModal() { document.getElementById('modalBack').classList.remove('open'); }
+document.getElementById('modalBack').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+function toast(msg, type='info') {
+  const icons={success:'✅',warning:'⚠️',error:'🚨',info:'ℹ️'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span style="flex-shrink:0">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.animation='tin .25s ease reverse';setTimeout(()=>el.remove(),250);},4500);
+}
+
+function toggleSB() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sbOverlay').classList.toggle('open'); }
+function closeSB()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sbOverlay').classList.remove('open'); }
+
+function filterTbl(inputId, tbodyId) {
+  const q=(document.getElementById(inputId)?.value||'').toLowerCase();
+  document.querySelectorAll(`#${tbodyId} tr`).forEach(tr=>{tr.style.display=!q||(tr.dataset.search||tr.textContent.toLowerCase()).includes(q)?'':'none';});
+}
+
+function emptyState(icon,title,msg,btn='') {
+  return `<div class="empty"><span class="empty-icon">${icon}</span><h3>${title}</h3><p>${msg}</p>${btn}</div>`;
+}
+
+function ri(label,val) {
+  return `<div class="row-item"><span class="row-label">${label}</span><strong>${val}</strong></div>`;
+}
+
+function timeAgo(dt) {
+  if(!dt) return '—';
+  const diff=Date.now()-new Date(dt).getTime();
+  const s=diff/1000,m=s/60,h=m/60,d=h/24;
+  if(s<60) return 'just now';
+  if(m<60) return `${Math.floor(m)}m ago`;
+  if(h<24) return `${Math.floor(h)}h ago`;
+  return `${Math.floor(d)}d ago`;
+}
+
+function getMyLoc(latId,lngId) {
+  navigator.geolocation?.getCurrentPosition(pos=>{
+    document.getElementById(latId).value=pos.coords.latitude.toFixed(6);
+    document.getElementById(lngId).value=pos.coords.longitude.toFixed(6);
+    toast(`📍 ${pos.coords.latitude.toFixed(4)}°N, ${pos.coords.longitude.toFixed(4)}°E`,'success');
+  },err=>toast('GPS not available','warning'),{enableHighAccuracy:true,timeout:15000});
+}
+
+// ════════════════════════════════════════════════════════
+//  START
+// ════════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

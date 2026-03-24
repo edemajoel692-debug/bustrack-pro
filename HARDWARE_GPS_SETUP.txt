@@ -1,0 +1,100 @@
+=============================================================
+  BusTrack Pro v4.0 — Hardware GPS Setup Guide
+  Jinja Senior Secondary School — Uganda 2026
+=============================================================
+
+YOUR SERVER GPS ENDPOINTS:
+  Main endpoint:  POST /api/gps/hardware
+  NMEA endpoint:  POST /api/gps/nmea
+  Batch offline:  POST /api/gps/batch
+  Device status:  GET  /api/gps/device-status
+
+=============================================================
+OPTION 1: GPS TRACKER WITH SIM CARD (GT06, TK103, Concox)
+=============================================================
+These are the most common vehicle GPS trackers in Uganda.
+They have a SIM card and send location automatically.
+
+Step 1: Buy a GPS tracker (GT06N or TK103B available in Uganda)
+Step 2: Insert a MTN/Airtel data SIM card
+Step 3: Configure the tracker to send HTTP to your server:
+        URL: https://bustrack-pro.up.railway.app/api/gps/hardware
+        Method: POST
+        Format: JSON
+        Fields: {lat, lng, speed, heading, device_id}
+
+Step 4: Register the device in BusTrack Admin:
+        Go to Buses → Edit Bus → GPS Device ID field
+        Enter the IMEI number of your tracker
+        Set GPS Type to "Hardware Device"
+
+Step 5: The tracker sends location automatically every 10-30 seconds
+
+SMS commands for GT06N tracker (send SMS to tracker SIM):
+  Set server: SERVER,0,TCP,YOUR-RAILWAY-URL,80#
+  Set interval: TIMER10#  (every 10 seconds)
+  Check status: STATUS#
+
+=============================================================
+OPTION 2: USB GPS DONGLE (connected to laptop)
+=============================================================
+Common USB GPS devices that work in Uganda.
+
+Step 1: Connect USB GPS to laptop running server.py
+Step 2: Install pyserial: pip install pyserial
+Step 3: Edit gps_serial.py:
+        SERVER_URL = "https://bustrack-pro.up.railway.app"
+        BUS_ID     = 1  (your bus ID from admin panel)
+        COM_PORT   = "COM4"  (check Device Manager)
+Step 4: Start a trip in admin panel first
+Step 5: Run: python gps_serial.py
+Step 6: GPS data flows automatically to server
+
+=============================================================
+OPTION 3: PHONE GPS (driver's Android phone) — ALREADY BUILT
+=============================================================
+No hardware needed. Driver opens the app, starts trip,
+GPS sends automatically every 5 seconds.
+Works offline — stores GPS when no data, syncs when connected.
+
+=============================================================
+TESTING YOUR HARDWARE GPS
+=============================================================
+Test with curl (from any computer):
+  curl -X POST https://bustrack-pro.up.railway.app/api/gps/hardware \
+       -H "Content-Type: application/json" \
+       -d '{"lat":0.4478,"lng":33.2026,"speed_kmh":45,"bus_id":1}'
+
+Check device status:
+  https://bustrack-pro.up.railway.app/api/gps/device-status
+  (Login as admin first)
+
+=============================================================
+SUPPORTED GPS DATA FORMATS
+=============================================================
+Format 1 — JSON (recommended):
+  {"device_id":"IMEI123","lat":0.4478,"lng":33.2026,
+   "speed":45,"heading":180,"bus_id":1}
+
+Format 2 — NMEA sentence:
+  {"sentence":"$GPRMC,123519,A,0044.78,N,03312.02,E,024.3,180.0,220326,,*1A",
+   "bus_id":1}
+
+Format 3 — Alternative field names (all accepted):
+  lat/latitude/lt, lng/lon/longitude/lg,
+  speed/spd/speed_kmh/vel, heading/direction/course/angle,
+  device_id/id/imei/tracker_id/unit_id
+
+=============================================================
+ADMIN PANEL — GPS DEVICE MANAGEMENT
+=============================================================
+Register GPS Device:
+  Admin → Buses → Edit Bus
+  GPS Device ID: Enter IMEI or serial number
+  GPS Type: Select "Hardware Device" or "Both"
+
+View Live GPS Devices:
+  Admin → Live Map → all buses with hardware GPS shown
+  Admin → GPS Devices (shows ping count, last update)
+
+=============================================================

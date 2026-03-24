@@ -1,0 +1,100 @@
+============================================================
+  BusTrack Pro v4.0 - Complete Setup Guide
+  Jinja Senior Secondary School - KIU 2026
+============================================================
+
+FILES IN THIS PACKAGE:
+  server.py             - Main Python backend server
+  schema.sql            - Database structure (21 tables)
+  index.html            - Complete frontend (PWA)
+  requirements.txt      - Python dependencies (none needed)
+  railway.json          - Railway.app deployment config
+  gps_serial.py         - USB/Serial GPS device reader
+  sendsms.py            - Test SMS sender
+  HARDWARE_GPS_SETUP.txt- Hardware GPS full guide
+  START_LOCAL.bat       - Run on your laptop
+  START_NGROK.bat       - Share over internet
+  HOW_TO_RUN.txt        - This file
+
+============================================================
+OPTION A: RUN LOCALLY (on your laptop)
+============================================================
+1. Double-click START_LOCAL.bat
+2. Open browser: http://localhost:8080
+3. Complete the setup wizard
+4. Start using the system
+
+============================================================
+OPTION B: HOST ONLINE (Railway.app - FREE)
+============================================================
+1. Upload all files to GitHub repository named "bustrack-pro"
+2. Go to railway.app, sign in with GitHub
+3. New Project -> Deploy from GitHub -> select bustrack-pro
+4. Settings -> Networking -> Generate Domain
+5. Your live URL: https://bustrack-pro.up.railway.app
+
+IMPORTANT: Delete runtime.txt from GitHub if it exists
+           Railway uses its own Python - no version file needed
+
+============================================================
+OPTION C: HOST ONLINE (Render.com - FREE)
+============================================================
+1. Upload all files to GitHub
+2. Go to render.com, sign in with GitHub  
+3. New -> Web Service -> Connect GitHub repo
+4. Build Command: pip install --upgrade pip
+5. Start Command: python server.py
+6. Add Environment Variable: PORT = 10000
+7. Your live URL: https://bustrack-pro.onrender.com
+
+NOTE: Render free tier sleeps after 15 mins of no activity.
+      Open the URL 2 minutes before your KIU defense!
+
+============================================================
+ADMIN SETUP ORDER (after first login)
+============================================================
+1. Routes & Stops  -> Create route -> Add pickup/dropoff stops
+2. Buses           -> Register buses
+3. Drivers         -> Add driver accounts (SMS sent automatically)
+4. Parents         -> Add parent accounts (SMS sent automatically)
+5. Routes & Stops  -> Click "+ Student" on each stop card
+6. Buses           -> Assign driver + route to each bus
+7. Hardware GPS    -> Register GPS device IMEI under each bus
+
+============================================================
+SMS CREDENTIALS (Africa's Talking - SANDBOX)
+============================================================
+Username: sandbox
+API Key:  atsk_1628153fb623a36ae2dc4c0e34f517d4a2afa8b0f597cea7589f1eabc3dde0394974070c
+Mode:     SANDBOX (test mode - free, no real SMS sent)
+
+To send REAL SMS to parents:
+1. Go to africastalking.com
+2. Create account, top up with UGX
+3. In server.py change AT_SANDBOX = "false"
+4. Change AT_USERNAME to your real username
+5. Change AT_API_KEY to your real API key
+
+============================================================
+HARDWARE GPS TRACKER SETUP (GT06N / TK103B)
+============================================================
+1. Buy tracker + MTN/Airtel SIM card
+2. Admin -> Buses -> Edit -> enter IMEI in "GPS Device ID"
+3. Send SMS to tracker SIM:
+   SERVER,0,TCP,your-railway-url.railway.app,80#
+   TIMER10#
+4. Tracker sends GPS every 10 seconds automatically
+5. See Admin -> Hardware GPS Devices page for status
+
+============================================================
+TEAM - KIU DIPLOMA IN IT - FEBRUARY 2026
+============================================================
+  Edema Joel        - 2024-08-30626  - Lead Developer
+  Akullu Gladys     - Team Member
+  Mbeyagala George  - Team Member
+  Babirye Judith    - Team Member
+  Supervisor: Balyejusa Gusite
+
+System: BusTrack Pro v4.0
+Case Study: Jinja Senior Secondary School
+============================================================

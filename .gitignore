@@ -1,7 +1,0 @@
-bustrack.db
-__pycache__/
-*.pyc
-*.pyo
-.env
-*.bat
-*.sh
